@@ -1,6 +1,39 @@
 @import 'tailwindcss';
 
-/*
- * Personaliza tu tema aquí
- * Documentación: https://tailwindcss.com/docs/theme
- */
+@theme {
+  /* Fonts (loaded via next/font in layout.tsx) */
+  --font-display: 'Fraunces', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-handwritten: 'Caveat', cursive;
+
+  /* Primary */
+  --color-cream: #FBF7F0;
+  --color-cream-dark: #F0E8DC;
+  --color-terracota: #C47D5A;
+  --color-terracota-dark: #A85D3F;
+  --color-terracota-light: #D4976F;
+  --color-sage: #8BA888;
+  --color-sage-dark: #6B8B6A;
+  --color-sage-light: #A3C4B5;
+  --color-rose: #D4A0A0;
+  --color-rose-dark: #C08080;
+  --color-blue: #7B9DB7;
+  --color-blue-dark: #5A7B97;
+  --color-warning: #D4A06B;
+  --color-warning-dark: #B58045;
+
+  /* Text */
+  --color-text: #4A3F35;
+  --color-text-light: #8B7E6A;
+  --color-text-muted: #B5A899;
+
+  /* Borders */
+  --color-border: #D4C5B0;
+  --color-border-light: #E8DDD0;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background-color: var(--color-cream);
+}

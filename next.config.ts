@@ -5,6 +5,16 @@ const nextConfig: NextConfig = {
   experimental: {
     mcpServer: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'xpkonjyzzugxdygltoxp.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+    formats: ['image/avif', 'image/webp'],
+  },
 }
 
 export default nextConfig
