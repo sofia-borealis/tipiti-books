@@ -15,6 +15,12 @@ const sceneSchema = z.object({
   character_position: z.string().max(200).optional(),
 })
 
+/** Wrap a plain text string into the JSON format the DB expects: {es: "..."} */
+function wrapNarrative(text: string | undefined): Record<string, string> | undefined {
+  if (!text) return undefined
+  return { es: text }
+}
+
 export type SceneFormData = z.infer<typeof sceneSchema>
 
 export async function createScene(bookId: string, data: SceneFormData) {
@@ -25,9 +31,10 @@ export async function createScene(bookId: string, data: SceneFormData) {
 
   const supabase = createAdminClient()
 
+  const { text_narrative, ...rest } = parsed.data
   const { error } = await supabase
     .from('scenes')
-    .insert({ book_id: bookId, ...parsed.data })
+    .insert({ book_id: bookId, ...rest, text_narrative: wrapNarrative(text_narrative) })
 
   if (error) {
     if (error.code === '23505') return { error: 'Ya existe una escena con ese número.' }
@@ -41,9 +48,14 @@ export async function createScene(bookId: string, data: SceneFormData) {
 export async function updateScene(sceneId: string, bookId: string, data: Partial<SceneFormData>) {
   const supabase = createAdminClient()
 
+  const { text_narrative, ...rest } = data
+  const updateData = {
+    ...rest,
+    ...(text_narrative !== undefined ? { text_narrative: wrapNarrative(text_narrative) } : {}),
+  }
   const { error } = await supabase
     .from('scenes')
-    .update(data)
+    .update(updateData)
     .eq('id', sceneId)
 
   if (error) {

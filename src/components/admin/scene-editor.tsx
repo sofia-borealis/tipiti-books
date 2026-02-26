@@ -22,13 +22,20 @@ import {
 interface Scene {
   id: string
   scene_number: number
-  text_narrative: string | null
+  text_narrative: Record<string, string> | string | null
   visual_description: string | null
   text_position: string | null
   camera_angle: string | null
   lighting: string | null
   emotion: string | null
   character_position: string | null
+}
+
+/** Extract text from text_narrative which can be a JSON object {es: "..."} or a plain string */
+function getNarrative(tn: Record<string, string> | string | null): string {
+  if (!tn) return ''
+  if (typeof tn === 'string') return tn
+  return tn.es || Object.values(tn)[0] || ''
 }
 
 interface SceneEditorProps {
@@ -124,7 +131,7 @@ export function SceneEditor({ bookId, scenes: initialScenes, stylePrompt }: Scen
 
   const startEditing = (scene: Scene) => {
     setEditingId(scene.id)
-    setEditNarrative(scene.text_narrative || '')
+    setEditNarrative(getNarrative(scene.text_narrative))
     setEditPrompt(scene.visual_description || '')
     setEditPosition((scene.text_position as 'top' | 'bottom' | 'overlay') || 'bottom')
   }
@@ -155,7 +162,7 @@ export function SceneEditor({ bookId, scenes: initialScenes, stylePrompt }: Scen
               #{scene.scene_number}
             </span>
             <span className="text-sm text-text flex-1 truncate">
-              {scene.text_narrative || '(sin texto)'}
+              {getNarrative(scene.text_narrative) || '(sin texto)'}
             </span>
             <div className="flex items-center gap-1">
               <button

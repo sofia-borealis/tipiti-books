@@ -42,6 +42,17 @@ export default async function VariantDetailPage({
 
   if (!variant) notFound()
 
+  /** Extract text from text_narrative which can be a JSON object {es: "..."} or a plain string */
+  function getNarrative(tn: unknown): string | null {
+    if (!tn) return null
+    if (typeof tn === 'string') return tn
+    if (typeof tn === 'object' && tn !== null) {
+      const obj = tn as Record<string, string>
+      return obj.es || Object.values(obj)[0] || null
+    }
+    return null
+  }
+
   // Sort pages by scene number (scenes is an array from Supabase join)
   const rawPages = variant.variant_pages || []
   const pages = [...rawPages]
@@ -81,7 +92,7 @@ export default async function VariantDetailPage({
             id: p.id,
             imageUrl: p.image_url,
             sceneNumber: scene?.scene_number || 0,
-            narrativeText: scene?.text_narrative || null,
+            narrativeText: getNarrative(scene?.text_narrative),
           }
         })}
       />
