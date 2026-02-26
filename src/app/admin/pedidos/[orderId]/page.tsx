@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { OrderDetail } from '@/components/admin/order-detail'
 import { ArrowLeft } from 'lucide-react'
 
@@ -10,7 +10,7 @@ export default async function OrderDetailPage({
   params: Promise<{ orderId: string }>
 }) {
   const { orderId } = await params
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: order } = await supabase
     .from('orders')

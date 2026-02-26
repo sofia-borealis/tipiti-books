@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { SceneEditor } from '@/components/admin/scene-editor'
 import { ArrowLeft } from 'lucide-react'
 
@@ -10,7 +10,7 @@ export default async function EditorPage({
   params: Promise<{ bookId: string }>
 }) {
   const { bookId } = await params
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: book } = await supabase
     .from('books')

@@ -1,8 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { OrdersTable } from '@/components/admin/orders-table'
 
 export default async function PedidosPage() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: orders } = await supabase
     .from('orders')

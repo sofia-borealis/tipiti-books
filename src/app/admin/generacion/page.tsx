@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { GenerationDashboard } from '@/components/admin/generation-dashboard'
 
 export default async function GeneracionPage({
@@ -7,7 +7,7 @@ export default async function GeneracionPage({
   searchParams: Promise<{ book?: string }>
 }) {
   const { book: selectedBookId } = await searchParams
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Fetch all books with variant counts
   const { data: books } = await supabase

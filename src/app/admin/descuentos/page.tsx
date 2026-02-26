@@ -1,8 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { DiscountManager } from '@/components/admin/discount-manager'
 
 export default async function DescuentosPage() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: codes } = await supabase
     .from('discount_codes')

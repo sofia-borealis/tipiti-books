@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { VariantDetail } from '@/components/admin/variant-detail'
 import { ArrowLeft } from 'lucide-react'
 
@@ -10,7 +10,7 @@ export default async function VariantDetailPage({
   params: Promise<{ bookId: string; variantId: string }>
 }) {
   const { bookId, variantId } = await params
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: book } = await supabase
     .from('books')

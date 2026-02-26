@@ -1,10 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { DashboardCards } from '@/components/admin/dashboard-cards'
 import { RecentOrders } from '@/components/admin/recent-orders'
 import { DashboardAlerts } from '@/components/admin/dashboard-alerts'
 
 export default async function AdminDashboardPage() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Sales today
   const today = new Date()

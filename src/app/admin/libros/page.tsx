@@ -1,10 +1,10 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Button } from '@/components/ui/button'
 import { Plus, BookOpen, Eye, EyeOff } from 'lucide-react'
 
 export default async function AdminLibrosPage() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: books } = await supabase
     .from('books')

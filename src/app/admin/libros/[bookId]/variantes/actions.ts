@@ -1,10 +1,10 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
 export async function approveVariant(variantId: string, bookId: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { error } = await supabase
     .from('character_variants')
     .update({ status: 'approved' })
@@ -16,7 +16,7 @@ export async function approveVariant(variantId: string, bookId: string) {
 }
 
 export async function rejectVariant(variantId: string, bookId: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { error } = await supabase
     .from('character_variants')
     .update({ status: 'rejected' })
@@ -32,7 +32,7 @@ export async function bulkUpdateVariants(
   status: 'approved' | 'rejected',
   bookId: string
 ) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { error } = await supabase
     .from('character_variants')
     .update({ status })
@@ -44,7 +44,7 @@ export async function bulkUpdateVariants(
 }
 
 export async function regenerateVariant(variantId: string, bookId: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Reset variant status to pending so the generation pipeline can pick it up again
   const { error } = await supabase

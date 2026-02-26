@@ -1,7 +1,7 @@
 'use server'
 
 import { z } from 'zod'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
 const sceneSchema = z.object({
@@ -23,7 +23,7 @@ export async function createScene(bookId: string, data: SceneFormData) {
     return { error: 'Datos inválidos: ' + parsed.error.issues.map(i => i.message).join(', ') }
   }
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from('scenes')
@@ -39,7 +39,7 @@ export async function createScene(bookId: string, data: SceneFormData) {
 }
 
 export async function updateScene(sceneId: string, bookId: string, data: Partial<SceneFormData>) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from('scenes')
@@ -55,7 +55,7 @@ export async function updateScene(sceneId: string, bookId: string, data: Partial
 }
 
 export async function deleteScene(sceneId: string, bookId: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from('scenes')
@@ -71,7 +71,7 @@ export async function deleteScene(sceneId: string, bookId: string) {
 }
 
 export async function reorderScenes(bookId: string, sceneIds: string[]) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   // Update scene_number for each scene based on new order
   const updates = sceneIds.map((id, index) =>

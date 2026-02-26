@@ -1,7 +1,7 @@
 'use server'
 
 import { z } from 'zod'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
 const discountSchema = z.object({
@@ -21,7 +21,7 @@ export async function createDiscountCode(data: DiscountFormData) {
     return { error: 'Datos inválidos: ' + parsed.error.issues.map(i => i.message).join(', ') }
   }
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { error } = await supabase
     .from('discount_codes')
     .insert({
@@ -39,7 +39,7 @@ export async function createDiscountCode(data: DiscountFormData) {
 }
 
 export async function updateDiscountCode(codeId: string, data: Partial<DiscountFormData>) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { error } = await supabase
     .from('discount_codes')
     .update(data)
@@ -51,7 +51,7 @@ export async function updateDiscountCode(codeId: string, data: Partial<DiscountF
 }
 
 export async function deleteDiscountCode(codeId: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { error } = await supabase
     .from('discount_codes')
     .delete()
@@ -63,7 +63,7 @@ export async function deleteDiscountCode(codeId: string) {
 }
 
 export async function toggleDiscountActive(codeId: string, isActive: boolean) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { error } = await supabase
     .from('discount_codes')
     .update({ is_active: !isActive })

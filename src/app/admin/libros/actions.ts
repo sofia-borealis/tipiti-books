@@ -1,7 +1,7 @@
 'use server'
 
 import { z } from 'zod'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -28,7 +28,7 @@ export async function createBook(data: BookFormData) {
     return { error: 'Datos inválidos: ' + parsed.error.issues.map(i => i.message).join(', ') }
   }
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { data: book, error } = await supabase
     .from('books')
     .insert(parsed.data)
@@ -45,7 +45,7 @@ export async function createBook(data: BookFormData) {
 }
 
 export async function updateBook(bookId: string, data: Partial<BookFormData>) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from('books')
@@ -62,7 +62,7 @@ export async function updateBook(bookId: string, data: Partial<BookFormData>) {
 }
 
 export async function deleteBook(bookId: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from('books')
@@ -78,7 +78,7 @@ export async function deleteBook(bookId: string) {
 }
 
 export async function togglePublish(bookId: string, isPublished: boolean) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from('books')

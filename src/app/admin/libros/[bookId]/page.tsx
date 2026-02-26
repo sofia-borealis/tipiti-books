@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { BookForm } from '@/components/admin/book-form'
 import { BookActions } from '@/components/admin/book-actions'
 import { ArrowLeft, Layers, Sparkles, Grid3X3 } from 'lucide-react'
@@ -12,7 +12,7 @@ export default async function BookDetailPage({
   params: Promise<{ bookId: string }>
 }) {
   const { bookId } = await params
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: book } = await supabase
     .from('books')

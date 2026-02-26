@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Users } from 'lucide-react'
 import { SubscribersTable } from '@/components/admin/subscribers-table'
 
 export default async function SuscriptoresPage() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: subscribers, error } = await supabase
     .from('subscribers')
