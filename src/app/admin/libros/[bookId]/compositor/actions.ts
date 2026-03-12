@@ -111,3 +111,35 @@ export async function generateBackground(data: {
     }
   }
 }
+
+export async function removeBackground(sceneId: string, bookId: string) {
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from('scenes')
+    .update({ background_url: null })
+    .eq('id', sceneId)
+
+  if (error) {
+    return { error: `Error al eliminar fondo: ${error.message}` }
+  }
+
+  revalidatePath(`/admin/libros/${bookId}/compositor`)
+  return { success: true }
+}
+
+export async function removeCharacterLayer(variantId: string, bookId: string) {
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from('character_variants')
+    .update({ character_layer_url: null })
+    .eq('id', variantId)
+
+  if (error) {
+    return { error: `Error al eliminar personaje: ${error.message}` }
+  }
+
+  revalidatePath(`/admin/libros/${bookId}/compositor`)
+  return { success: true }
+}

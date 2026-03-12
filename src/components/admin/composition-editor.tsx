@@ -5,6 +5,8 @@ import { CompositionCanvas } from './composition-canvas'
 import {
   updateCharacterPosition,
   generateBackground,
+  removeBackground,
+  removeCharacterLayer,
 } from '@/app/admin/libros/[bookId]/compositor/actions'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,6 +18,7 @@ import {
   EyeOff,
   AlertTriangle,
   Sparkles,
+  Trash2,
 } from 'lucide-react'
 
 interface Scene {
@@ -176,7 +179,9 @@ export function CompositionEditor({
         setError(result.error)
       } else {
         setSuccess(`Fondo generado (seed: ${result.seed})`)
-        setLocalBgUrl(result.backgroundUrl ?? null)
+        // Add cache-busting param so browser doesn't show old cached image
+        const url = result.backgroundUrl
+        setLocalBgUrl(url ? `${url}?t=${Date.now()}` : null)
         setShowBgGenerator(false)
       }
       setIsGeneratingBg(false)
@@ -207,7 +212,7 @@ export function CompositionEditor({
         return
       }
       setSuccess('Fondo subido correctamente')
-      setLocalBgUrl(data.backgroundUrl)
+      setLocalBgUrl(`${data.backgroundUrl}?t=${Date.now()}`)
     } catch {
       setError('Error de conexión al subir fondo')
     }
@@ -240,10 +245,41 @@ export function CompositionEditor({
         setAlphaWarning(data.warning)
       }
       setSuccess('Personaje subido correctamente')
-      setLocalCharUrl(data.characterUrl)
+      setLocalCharUrl(`${data.characterUrl}?t=${Date.now()}`)
     } catch {
       setError('Error de conexión al subir personaje')
     }
+  }
+
+  const handleRemoveBackground = () => {
+    if (!scene) return
+    if (!confirm('¿Eliminar el fondo de esta escena?')) return
+    setError('')
+    startTransition(async () => {
+      const result = await removeBackground(scene.id, bookId)
+      if (result.error) {
+        setError(result.error)
+      } else {
+        setLocalBgUrl(null)
+        scenes[selectedSceneIdx] = { ...scenes[selectedSceneIdx], background_url: null }
+        setSuccess('Fondo eliminado')
+      }
+    })
+  }
+
+  const handleRemoveCharacter = () => {
+    if (!selectedVariantId) return
+    if (!confirm('¿Eliminar la imagen del personaje de esta variante?')) return
+    setError('')
+    startTransition(async () => {
+      const result = await removeCharacterLayer(selectedVariantId, bookId)
+      if (result.error) {
+        setError(result.error)
+      } else {
+        setLocalCharUrl(null)
+        setSuccess('Personaje eliminado')
+      }
+    })
   }
 
   const handleCompose = async () => {
@@ -500,6 +536,18 @@ export function CompositionEditor({
               className="hidden"
             />
           </label>
+
+          {/* Remove background */}
+          {(localBgUrl || scene?.background_url) && (
+            <button
+              onClick={handleRemoveBackground}
+              disabled={isPending}
+              className="flex items-center gap-1.5 text-xs text-text-muted hover:text-terracota-dark transition-colors"
+            >
+              <Trash2 className="w-3 h-3" />
+              Eliminar fondo
+            </button>
+          )}
         </div>
 
         {/* Character upload section */}
@@ -517,6 +565,18 @@ export function CompositionEditor({
               className="hidden"
             />
           </label>
+
+          {/* Remove character */}
+          {(localCharUrl || selectedVariant?.character_layer_url) && (
+            <button
+              onClick={handleRemoveCharacter}
+              disabled={isPending}
+              className="flex items-center gap-1.5 text-xs text-text-muted hover:text-terracota-dark transition-colors"
+            >
+              <Trash2 className="w-3 h-3" />
+              Eliminar personaje
+            </button>
+          )}
         </div>
 
         {/* Actions */}
