@@ -100,10 +100,15 @@ export async function generateBackground(data: {
 
     revalidatePath(`/admin/libros/${data.bookId}/compositor`)
 
+    console.log('[generateBackground] fal.ai image URL:', result.imageUrl)
+    console.log('[generateBackground] LoRAs used:', result.lorasUsed)
+
     return {
       success: true,
       backgroundUrl,
       seed: result.seed,
+      falImageUrl: result.imageUrl,
+      lorasUsed: result.lorasUsed,
     }
   } catch (err) {
     return {

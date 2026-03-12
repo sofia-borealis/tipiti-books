@@ -178,7 +178,10 @@ export function CompositionEditor({
       if (result.error) {
         setError(result.error)
       } else {
-        setSuccess(`Fondo generado (seed: ${result.seed})`)
+        const debugInfo = result.falImageUrl
+          ? `\nfal.ai URL: ${result.falImageUrl}\nLoRAs: ${(result.lorasUsed || []).join(', ') || 'ninguno'}`
+          : ''
+        setSuccess(`Fondo generado (seed: ${result.seed})${debugInfo}`)
         // Add cache-busting param so browser doesn't show old cached image
         const url = result.backgroundUrl
         setLocalBgUrl(url ? `${url}?t=${Date.now()}` : null)
@@ -396,7 +399,7 @@ export function CompositionEditor({
           </div>
         )}
         {success && (
-          <div className="bg-sage/10 border border-sage/20 rounded-lg px-3 py-2 text-xs text-sage-dark">
+          <div className="bg-sage/10 border border-sage/20 rounded-lg px-3 py-2 text-xs text-sage-dark whitespace-pre-wrap break-all">
             {success}
           </div>
         )}

@@ -50,20 +50,25 @@ export async function generateWithLora({
   const loras = getLoraPayload(loraOptions)
   const lorasUsed = loras.map((l) => l.path)
 
+  const payload = {
+    prompt: fullPrompt,
+    image_size: { width, height },
+    num_images: 1,
+    enable_safety_checker: false,
+    guidance_scale: 3.5,
+    loras: loras.length > 0 ? loras : undefined,
+  }
+
+  console.log('[fal-lora] Sending to', `${FAL_API_URL}/${model}`)
+  console.log('[fal-lora] Payload:', JSON.stringify(payload, null, 2))
+
   const response = await fetch(`${FAL_API_URL}/${model}`, {
     method: 'POST',
     headers: {
       Authorization: `Key ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      prompt: fullPrompt,
-      image_size: { width, height },
-      num_images: 1,
-      enable_safety_checker: false,
-      guidance_scale: 3.5,
-      loras: loras.length > 0 ? loras : undefined,
-    }),
+    body: JSON.stringify(payload),
   })
 
   if (!response.ok) {
