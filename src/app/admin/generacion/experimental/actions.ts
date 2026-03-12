@@ -19,8 +19,8 @@ export async function generateExperimental(data: {
       stylePrompt: data.stylePrompt,
       includeStyleLora: data.includeStyleLora,
       includeCharacterLora: data.includeCharacterLora,
-      width: 2200,
-      height: 1800,
+      width: 2598,
+      height: 4252,
     })
 
     return {

@@ -4,13 +4,13 @@
  * Composes book pages by layering a character PNG (with transparency)
  * over a background image. Uses Sharp for server-side image processing.
  *
- * Output: 2200x1800 PNG (22x18cm at 254 DPI)
+ * Output: 2598x4252 PNG (22x36cm at 300 DPI)
  */
 
 import sharp from 'sharp'
 
-const PAGE_WIDTH = 2200
-const PAGE_HEIGHT = 1800
+const PAGE_WIDTH = 2598
+const PAGE_HEIGHT = 4252
 
 interface LayerCompositionParams {
   backgroundBuffer: Buffer

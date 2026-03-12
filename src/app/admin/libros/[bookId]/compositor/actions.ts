@@ -68,8 +68,8 @@ export async function generateBackground(data: {
       stylePrompt: data.stylePrompt,
       includeStyleLora: true,
       includeCharacterLora: false,
-      width: 2200,
-      height: 1800,
+      width: 2598,
+      height: 4252,
     })
 
     // Download and save to Supabase as the scene background

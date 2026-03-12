@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import sharp from 'sharp'
 
-const PAGE_WIDTH = 2200
-const PAGE_HEIGHT = 1800
+const PAGE_WIDTH = 2598
+const PAGE_HEIGHT = 4252
 
 export async function POST(request: NextRequest) {
   try {

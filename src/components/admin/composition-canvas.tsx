@@ -73,7 +73,7 @@ export function CompositionCanvas({
   // Show composed result
   if (showComposed && composedUrl) {
     return (
-      <div className="aspect-[11/9] relative overflow-hidden bg-cream rounded-xl border border-border-light">
+      <div className="aspect-[11/18] relative overflow-hidden bg-cream rounded-xl border border-border-light">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={composedUrl}
@@ -88,7 +88,7 @@ export function CompositionCanvas({
   return (
     <div
       ref={canvasRef}
-      className="aspect-[11/9] relative overflow-hidden bg-cream rounded-xl border border-border-light select-none"
+      className="aspect-[11/18] relative overflow-hidden bg-cream rounded-xl border border-border-light select-none"
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
