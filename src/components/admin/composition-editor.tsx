@@ -2,7 +2,10 @@
 
 import { useState, useRef, useCallback, useTransition } from 'react'
 import { CompositionCanvas } from './composition-canvas'
-import { updateCharacterPosition } from '@/app/admin/libros/[bookId]/compositor/actions'
+import {
+  updateCharacterPosition,
+  generateBackground,
+} from '@/app/admin/libros/[bookId]/compositor/actions'
 import { Button } from '@/components/ui/button'
 import {
   FlipHorizontal,
@@ -12,6 +15,7 @@ import {
   Eye,
   EyeOff,
   AlertTriangle,
+  Sparkles,
 } from 'lucide-react'
 
 interface Scene {
@@ -40,6 +44,7 @@ interface Variant {
 
 interface CompositionEditorProps {
   bookId: string
+  stylePrompt: string
   scenes: Scene[]
   variants: Variant[]
 }
@@ -62,6 +67,7 @@ function variantLabel(v: Variant): string {
 
 export function CompositionEditor({
   bookId,
+  stylePrompt,
   scenes,
   variants,
 }: CompositionEditorProps) {
@@ -76,6 +82,9 @@ export function CompositionEditor({
   const [composedUrl, setComposedUrl] = useState<string | null>(null)
   const [isComposing, setIsComposing] = useState(false)
   const [alphaWarning, setAlphaWarning] = useState('')
+  const [isGeneratingBg, setIsGeneratingBg] = useState(false)
+  const [bgPrompt, setBgPrompt] = useState('')
+  const [showBgGenerator, setShowBgGenerator] = useState(false)
 
   // Local position state (for real-time drag updates)
   const [charX, setCharX] = useState(scenes[0]?.character_x ?? 50)
@@ -139,8 +148,35 @@ export function CompositionEditor({
     setCharFlip(s?.character_flip ?? false)
     setComposedUrl(null)
     setShowComposed(false)
+    setShowBgGenerator(false)
+    setBgPrompt(s?.visual_description || '')
     setError('')
     setSuccess('')
+  }
+
+  const handleGenerateBackground = async () => {
+    if (!scene || !bgPrompt.trim()) return
+    setError('')
+    setSuccess('')
+    setIsGeneratingBg(true)
+
+    startTransition(async () => {
+      const result = await generateBackground({
+        sceneId: scene.id,
+        bookId,
+        sceneNumber: scene.scene_number,
+        prompt: bgPrompt.trim(),
+        stylePrompt,
+      })
+
+      if (result.error) {
+        setError(result.error)
+      } else {
+        setSuccess(`Fondo generado (seed: ${result.seed})`)
+        window.location.reload()
+      }
+      setIsGeneratingBg(false)
+    })
   }
 
   const handleUploadBackground = async (
@@ -402,16 +438,56 @@ export function CompositionEditor({
           </Button>
         </div>
 
-        {/* Upload section */}
+        {/* Background section */}
         <div className="bg-white rounded-xl border border-border-light p-4 space-y-3">
           <h3 className="text-xs font-semibold text-text uppercase tracking-wide">
-            Archivos
+            Fondo
           </h3>
 
-          {/* Upload background */}
+          {/* Generate background with LoRA */}
+          <Button
+            variant="secondary"
+            size="sm"
+            className="w-full"
+            onClick={() => {
+              setShowBgGenerator(!showBgGenerator)
+              if (!bgPrompt && scene?.visual_description) {
+                setBgPrompt(scene.visual_description)
+              }
+            }}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            {showBgGenerator ? 'Cerrar generador' : 'Generar con LoRA'}
+          </Button>
+
+          {showBgGenerator && (
+            <div className="space-y-2">
+              <textarea
+                value={bgPrompt}
+                onChange={(e) => setBgPrompt(e.target.value)}
+                rows={3}
+                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-xs text-text font-mono resize-none outline-none focus-visible:border-terracota focus-visible:ring-2 focus-visible:ring-terracota/15"
+                placeholder="Describe el fondo (sin personaje)..."
+              />
+              <p className="text-[10px] text-text-muted">
+                Usa el LoRA de estilo Tipiti (tptbk illustration). No incluye personaje.
+              </p>
+              <Button
+                size="sm"
+                className="w-full"
+                onClick={handleGenerateBackground}
+                disabled={isGeneratingBg || !bgPrompt.trim()}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {isGeneratingBg ? 'Generando fondo...' : 'Generar fondo'}
+              </Button>
+            </div>
+          )}
+
+          {/* Or upload manually */}
           <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border hover:border-terracota/30 cursor-pointer transition-colors">
             <Upload className="w-3.5 h-3.5 text-text-muted" />
-            <span className="text-xs text-text-light">Subir fondo</span>
+            <span className="text-xs text-text-light">O subir fondo manualmente</span>
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp"
@@ -419,11 +495,16 @@ export function CompositionEditor({
               className="hidden"
             />
           </label>
+        </div>
 
-          {/* Upload character */}
+        {/* Character upload section */}
+        <div className="bg-white rounded-xl border border-border-light p-4 space-y-3">
+          <h3 className="text-xs font-semibold text-text uppercase tracking-wide">
+            Personaje
+          </h3>
           <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border hover:border-terracota/30 cursor-pointer transition-colors">
             <Upload className="w-3.5 h-3.5 text-text-muted" />
-            <span className="text-xs text-text-light">Subir personaje (PNG)</span>
+            <span className="text-xs text-text-light">Subir personaje (PNG transparente)</span>
             <input
               type="file"
               accept="image/png"

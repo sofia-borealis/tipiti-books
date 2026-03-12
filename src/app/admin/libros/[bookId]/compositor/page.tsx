@@ -14,7 +14,7 @@ export default async function CompositorPage({
 
   const { data: book } = await supabase
     .from('books')
-    .select('id, title_template, page_width_mm, page_height_mm')
+    .select('id, title_template, page_width_mm, page_height_mm, style_prompt')
     .eq('id', bookId)
     .single()
 
@@ -55,6 +55,7 @@ export default async function CompositorPage({
 
       <CompositionEditor
         bookId={book.id}
+        stylePrompt={book.style_prompt || ''}
         scenes={scenes || []}
         variants={variants || []}
       />
