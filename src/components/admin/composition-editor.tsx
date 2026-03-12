@@ -85,6 +85,8 @@ export function CompositionEditor({
   const [isGeneratingBg, setIsGeneratingBg] = useState(false)
   const [bgPrompt, setBgPrompt] = useState('')
   const [showBgGenerator, setShowBgGenerator] = useState(false)
+  const [localBgUrl, setLocalBgUrl] = useState<string | null>(null)
+  const [localCharUrl, setLocalCharUrl] = useState<string | null>(null)
 
   // Local position state (for real-time drag updates)
   const [charX, setCharX] = useState(scenes[0]?.character_x ?? 50)
@@ -149,6 +151,7 @@ export function CompositionEditor({
     setComposedUrl(null)
     setShowComposed(false)
     setShowBgGenerator(false)
+    setLocalBgUrl(null)
     setBgPrompt(s?.visual_description || '')
     setError('')
     setSuccess('')
@@ -173,7 +176,8 @@ export function CompositionEditor({
         setError(result.error)
       } else {
         setSuccess(`Fondo generado (seed: ${result.seed})`)
-        window.location.reload()
+        setLocalBgUrl(result.backgroundUrl ?? null)
+        setShowBgGenerator(false)
       }
       setIsGeneratingBg(false)
     })
@@ -203,7 +207,7 @@ export function CompositionEditor({
         return
       }
       setSuccess('Fondo subido correctamente')
-      window.location.reload()
+      setLocalBgUrl(data.backgroundUrl)
     } catch {
       setError('Error de conexión al subir fondo')
     }
@@ -236,7 +240,7 @@ export function CompositionEditor({
         setAlphaWarning(data.warning)
       }
       setSuccess('Personaje subido correctamente')
-      window.location.reload()
+      setLocalCharUrl(data.characterUrl)
     } catch {
       setError('Error de conexión al subir personaje')
     }
@@ -318,6 +322,7 @@ export function CompositionEditor({
                 setSelectedVariantId(e.target.value)
                 setComposedUrl(null)
                 setShowComposed(false)
+                setLocalCharUrl(null)
               }}
               className="w-full rounded-lg border border-border bg-white px-2 py-1.5 text-xs text-text"
             >
@@ -334,8 +339,8 @@ export function CompositionEditor({
       {/* Center: Canvas */}
       <div>
         <CompositionCanvas
-          backgroundUrl={scene?.background_url || null}
-          characterUrl={selectedVariant?.character_layer_url || null}
+          backgroundUrl={localBgUrl || scene?.background_url || null}
+          characterUrl={localCharUrl || selectedVariant?.character_layer_url || null}
           characterX={charX}
           characterY={charY}
           characterScale={charScale}
