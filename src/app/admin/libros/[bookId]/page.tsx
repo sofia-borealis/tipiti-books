@@ -81,11 +81,17 @@ export default async function BookDetailPage({
       </div>
 
       {/* Action buttons */}
-      <div className="flex gap-3 mb-6">
+      <div className="flex flex-wrap gap-3 mb-6">
         <Button variant="secondary" asChild>
           <Link href={`/admin/libros/${bookId}/editor`}>
             <Layers className="w-4 h-4" />
             Editor de escenas
+          </Link>
+        </Button>
+        <Button variant="secondary" asChild>
+          <Link href={`/admin/libros/${bookId}/compositor`}>
+            <Layers className="w-4 h-4" />
+            Compositor
           </Link>
         </Button>
         <Button variant="secondary" asChild>
