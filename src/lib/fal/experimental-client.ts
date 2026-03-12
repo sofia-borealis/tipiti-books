@@ -39,10 +39,12 @@ export async function generateWithLora({
     throw new Error('FAL_KEY environment variable is not set')
   }
 
-  // Build prompt with LoRA trigger words
+  // Build prompt: trigger words first, then style context, then scene description
   const loraOptions = { includeStyle: includeStyleLora, includeCharacter: includeCharacterLora }
   const enhancedPrompt = buildLoraPrompt(prompt, loraOptions)
-  const fullPrompt = `${stylePrompt}\n\n${enhancedPrompt}`
+  const fullPrompt = stylePrompt
+    ? `${enhancedPrompt}\n\n${stylePrompt}`
+    : enhancedPrompt
 
   // Build LoRA payload
   const loras = getLoraPayload(loraOptions)
@@ -59,6 +61,7 @@ export async function generateWithLora({
       image_size: { width, height },
       num_images: 1,
       enable_safety_checker: false,
+      guidance_scale: 3.5,
       loras: loras.length > 0 ? loras : undefined,
     }),
   })

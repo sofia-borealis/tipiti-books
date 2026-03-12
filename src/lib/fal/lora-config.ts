@@ -15,12 +15,12 @@ export const TIPITI_LORAS = {
   style: {
     url: 'https://v3b.fal.media/files/b/0a919e46/o1eq5GrfH3_b0eVpMRWnt_pytorch_lora_weights.safetensors',
     triggerWord: 'tptbk illustration',
-    scale: 3,
+    scale: 1.0,
   } satisfies LoraConfig,
   character: {
     url: 'https://v3b.fal.media/files/b/0a91a5ab/3czqKoLUQo1DK6IFCsM6a_pytorch_lora_weights.safetensors',
     triggerWord: 'tptbk boy1',
-    scale: 1,
+    scale: 1.0,
   } satisfies LoraConfig,
 }
 
@@ -32,10 +32,12 @@ export function buildLoraPrompt(
   options: { includeStyle?: boolean; includeCharacter?: boolean } = {}
 ): string {
   const { includeStyle = true, includeCharacter = false } = options
-  const parts = [basePrompt]
-  if (includeStyle) parts.push(TIPITI_LORAS.style.triggerWord)
-  if (includeCharacter) parts.push(TIPITI_LORAS.character.triggerWord)
-  return parts.join(', ')
+  // Trigger words go at the BEGINNING so the LoRA activates properly
+  const triggers: string[] = []
+  if (includeStyle) triggers.push(TIPITI_LORAS.style.triggerWord)
+  if (includeCharacter) triggers.push(TIPITI_LORAS.character.triggerWord)
+  if (triggers.length === 0) return basePrompt
+  return `${triggers.join(', ')}, ${basePrompt}`
 }
 
 /**
