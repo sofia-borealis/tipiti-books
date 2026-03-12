@@ -32,7 +32,7 @@ export async function generateWithLora({
   includeCharacterLora = false,
   width = 2048,
   height = 2048,
-  model = 'fal-ai/flux-kontext-pro',
+  model = 'fal-ai/flux-lora',
 }: ExperimentalGenerateParams): Promise<ExperimentalGenerateResult> {
   const apiKey = process.env.FAL_KEY
   if (!apiKey) {
