@@ -79,7 +79,7 @@ export function CompositionCanvas({
     return (
       <div className="flex items-center justify-center w-full">
         <div
-          className="max-w-full max-h-[78vh] relative overflow-hidden bg-cream rounded-xl border border-border-light"
+          className="w-full max-h-[78vh] relative overflow-hidden bg-cream rounded-xl border border-border-light"
           style={canvasStyle}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -98,7 +98,7 @@ export function CompositionCanvas({
     <div className="flex items-center justify-center w-full">
       <div
         ref={canvasRef}
-        className="max-w-full max-h-[78vh] relative overflow-hidden bg-cream rounded-xl border border-border-light select-none"
+        className="w-full max-h-[78vh] relative overflow-hidden bg-cream rounded-xl border border-border-light select-none"
         style={canvasStyle}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
