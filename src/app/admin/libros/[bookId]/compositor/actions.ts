@@ -60,16 +60,21 @@ export async function generateBackground(data: {
   sceneNumber: number
   prompt: string
   stylePrompt: string
+  pageWidth?: number
+  pageHeight?: number
 }) {
   try {
+    const width = data.pageWidth || 2598
+    const height = data.pageHeight || 2126
+
     // Generate with style LoRA (no character LoRA for backgrounds)
     const result = await generateWithLora({
       prompt: data.prompt,
       stylePrompt: data.stylePrompt,
       includeStyleLora: true,
       includeCharacterLora: false,
-      width: 2598,
-      height: 4252,
+      width,
+      height,
     })
 
     // Download and save to Supabase as the scene background

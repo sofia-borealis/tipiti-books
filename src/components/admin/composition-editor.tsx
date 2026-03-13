@@ -68,6 +68,13 @@ function variantLabel(v: Variant): string {
   return `${gender} — ${v.skin_tone}, ${v.hair_color}, ${v.hair_type}${glasses}`
 }
 
+type PageFormat = 'simple' | 'spread'
+
+const PAGE_FORMATS = {
+  simple: { width: 2598, height: 2126, aspect: '11/9', label: 'Simple (22×18cm)' },
+  spread: { width: 5197, height: 2126, aspect: '22/9', label: 'Doble (44×18cm)' },
+} as const
+
 export function CompositionEditor({
   bookId,
   stylePrompt,
@@ -90,6 +97,9 @@ export function CompositionEditor({
   const [showBgGenerator, setShowBgGenerator] = useState(false)
   const [localBgUrl, setLocalBgUrl] = useState<string | null>(null)
   const [localCharUrl, setLocalCharUrl] = useState<string | null>(null)
+  const [pageFormat, setPageFormat] = useState<PageFormat>('simple')
+
+  const pageDims = PAGE_FORMATS[pageFormat]
 
   // Local position state (for real-time drag updates)
   const [charX, setCharX] = useState(scenes[0]?.character_x ?? 50)
@@ -173,6 +183,8 @@ export function CompositionEditor({
         sceneNumber: scene.scene_number,
         prompt: bgPrompt.trim(),
         stylePrompt,
+        pageWidth: pageDims.width,
+        pageHeight: pageDims.height,
       })
 
       if (result.error) {
@@ -203,6 +215,8 @@ export function CompositionEditor({
     formData.append('sceneId', scene.id)
     formData.append('bookId', bookId)
     formData.append('sceneNumber', String(scene.scene_number))
+    formData.append('pageWidth', String(pageDims.width))
+    formData.append('pageHeight', String(pageDims.height))
 
     try {
       const res = await fetch('/api/admin/upload-background', {
@@ -299,6 +313,8 @@ export function CompositionEditor({
           sceneId: scene.id,
           variantId: selectedVariantId,
           bookId,
+          pageWidth: pageDims.width,
+          pageHeight: pageDims.height,
         }),
       })
       const data = await res.json()
@@ -386,12 +402,45 @@ export function CompositionEditor({
           characterFlip={charFlip}
           composedUrl={composedUrl}
           showComposed={showComposed}
+          aspectRatio={pageDims.aspect}
           onPositionChange={handlePositionChange}
         />
       </div>
 
       {/* Right: Controls */}
       <div className="space-y-4">
+        {/* Page format toggle */}
+        <div className="bg-white rounded-xl border border-border-light p-3">
+          <h3 className="text-xs font-semibold text-text uppercase tracking-wide mb-2">
+            Formato
+          </h3>
+          <div className="flex rounded-lg border border-border overflow-hidden">
+            <button
+              onClick={() => setPageFormat('simple')}
+              className={`flex-1 px-3 py-1.5 text-xs font-medium transition-colors ${
+                pageFormat === 'simple'
+                  ? 'bg-terracota text-white'
+                  : 'bg-white text-text-light hover:bg-cream'
+              }`}
+            >
+              Simple
+            </button>
+            <button
+              onClick={() => setPageFormat('spread')}
+              className={`flex-1 px-3 py-1.5 text-xs font-medium transition-colors ${
+                pageFormat === 'spread'
+                  ? 'bg-terracota text-white'
+                  : 'bg-white text-text-light hover:bg-cream'
+              }`}
+            >
+              Doble
+            </button>
+          </div>
+          <p className="text-[10px] text-text-muted mt-1.5">
+            {pageDims.label} — {pageDims.width}×{pageDims.height}px
+          </p>
+        </div>
+
         {/* Messages */}
         {error && (
           <div className="bg-terracota/10 border border-terracota/20 rounded-lg px-3 py-2 text-xs text-terracota-dark">

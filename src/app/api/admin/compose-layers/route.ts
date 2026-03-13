@@ -4,7 +4,7 @@ import { composeLayers } from '@/lib/compose/layer-composer'
 
 export async function POST(request: NextRequest) {
   try {
-    const { sceneId, variantId, bookId } = await request.json()
+    const { sceneId, variantId, bookId, pageWidth = 2598, pageHeight = 2126 } = await request.json()
 
     if (!sceneId || !variantId || !bookId) {
       return NextResponse.json(
@@ -87,6 +87,8 @@ export async function POST(request: NextRequest) {
       characterY: scene.character_y ?? 50,
       characterScale: scene.character_scale ?? 0.6,
       characterFlip: scene.character_flip ?? false,
+      pageWidth,
+      pageHeight,
     })
 
     // Upload composed image

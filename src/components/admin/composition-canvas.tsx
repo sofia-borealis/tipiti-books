@@ -12,6 +12,7 @@ interface CompositionCanvasProps {
   characterFlip: boolean
   composedUrl: string | null
   showComposed: boolean
+  aspectRatio: string // e.g. "11/9" or "22/9"
   onPositionChange: (x: number, y: number) => void
 }
 
@@ -24,6 +25,7 @@ export function CompositionCanvas({
   characterFlip,
   composedUrl,
   showComposed,
+  aspectRatio,
   onPositionChange,
 }: CompositionCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -73,7 +75,7 @@ export function CompositionCanvas({
   // Show composed result
   if (showComposed && composedUrl) {
     return (
-      <div className="aspect-[11/18] max-h-[78vh] w-auto mx-auto relative overflow-hidden bg-cream rounded-xl border border-border-light">
+      <div className="max-h-[78vh] w-auto mx-auto relative overflow-hidden bg-cream rounded-xl border border-border-light" style={{ aspectRatio }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={composedUrl}
@@ -88,7 +90,8 @@ export function CompositionCanvas({
   return (
     <div
       ref={canvasRef}
-      className="aspect-[11/18] max-h-[78vh] w-auto mx-auto relative overflow-hidden bg-cream rounded-xl border border-border-light select-none"
+      className="max-h-[78vh] w-auto mx-auto relative overflow-hidden bg-cream rounded-xl border border-border-light select-none"
+      style={{ aspectRatio }}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}

@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import sharp from 'sharp'
 
-const PAGE_WIDTH = 2598
-const PAGE_HEIGHT = 4252
-
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -12,6 +9,8 @@ export async function POST(request: NextRequest) {
     const sceneId = formData.get('sceneId') as string | null
     const bookId = formData.get('bookId') as string | null
     const sceneNumber = formData.get('sceneNumber') as string | null
+    const pageWidth = Number(formData.get('pageWidth')) || 2598
+    const pageHeight = Number(formData.get('pageHeight')) || 2126
 
     if (!file || !sceneId || !bookId || !sceneNumber) {
       return NextResponse.json(
@@ -24,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     // Resize to page dimensions
     const resized = await sharp(buffer)
-      .resize(PAGE_WIDTH, PAGE_HEIGHT, { fit: 'cover' })
+      .resize(pageWidth, pageHeight, { fit: 'cover' })
       .png()
       .toBuffer()
 

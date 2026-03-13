@@ -20,7 +20,7 @@ export async function generateExperimental(data: {
       includeStyleLora: data.includeStyleLora,
       includeCharacterLora: data.includeCharacterLora,
       width: 2598,
-      height: 4252,
+      height: 2126,
     })
 
     return {

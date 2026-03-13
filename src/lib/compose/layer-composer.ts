@@ -4,21 +4,22 @@
  * Composes book pages by layering a character PNG (with transparency)
  * over a background image. Uses Sharp for server-side image processing.
  *
- * Output: 2598x4252 PNG (22x36cm at 300 DPI)
+ * Output dimensions depend on page format:
+ *   Simple (22x18cm): 2598x2126 px at 300 DPI
+ *   Spread (44x18cm): 5197x2126 px at 300 DPI
  */
 
 import sharp from 'sharp'
-
-const PAGE_WIDTH = 2598
-const PAGE_HEIGHT = 4252
 
 interface LayerCompositionParams {
   backgroundBuffer: Buffer
   characterBuffer: Buffer
   characterX: number       // 0-100 (% of page width)
   characterY: number       // 0-100 (% of page height)
-  characterScale: number   // relative to page height (e.g., 0.6 = 60% of 1800px)
+  characterScale: number   // relative to page height
   characterFlip: boolean
+  pageWidth: number        // px
+  pageHeight: number       // px
 }
 
 interface CompositionResult {
@@ -36,10 +37,12 @@ export async function composeLayers({
   characterY,
   characterScale,
   characterFlip,
+  pageWidth,
+  pageHeight,
 }: LayerCompositionParams): Promise<CompositionResult> {
   // 1. Resize background to page dimensions
   const background = await sharp(backgroundBuffer)
-    .resize(PAGE_WIDTH, PAGE_HEIGHT, { fit: 'cover' })
+    .resize(pageWidth, pageHeight, { fit: 'cover' })
     .png()
     .toBuffer()
 
@@ -47,7 +50,7 @@ export async function composeLayers({
   const charMeta = await sharp(characterBuffer).metadata()
   const charAspect = (charMeta.width || 1) / (charMeta.height || 1)
 
-  const targetHeight = Math.round(characterScale * PAGE_HEIGHT)
+  const targetHeight = Math.round(characterScale * pageHeight)
   const targetWidth = Math.round(targetHeight * charAspect)
 
   // 3. Resize character + optional flip
@@ -88,8 +91,8 @@ export async function composeLayers({
     .toBuffer()
 
   // 5. Calculate pixel positions (center-based)
-  const pixelX = Math.round((characterX / 100) * PAGE_WIDTH - targetWidth / 2)
-  const pixelY = Math.round((characterY / 100) * PAGE_HEIGHT - targetHeight / 2)
+  const pixelX = Math.round((characterX / 100) * pageWidth - targetWidth / 2)
+  const pixelY = Math.round((characterY / 100) * pageHeight - targetHeight / 2)
 
   // Clamp shadow offset to valid range
   const shadowLeft = Math.max(0, pixelX + 2)
