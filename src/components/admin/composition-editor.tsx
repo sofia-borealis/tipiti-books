@@ -392,7 +392,7 @@ export function CompositionEditor({
       </div>
 
       {/* Center: Canvas */}
-      <div>
+      <div className="min-w-0">
         <CompositionCanvas
           backgroundUrl={localBgUrl || scene?.background_url || null}
           characterUrl={localCharUrl || selectedVariant?.character_layer_url || null}
