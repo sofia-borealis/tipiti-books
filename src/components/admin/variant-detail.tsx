@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Image as ImageIcon,
+  Upload,
 } from 'lucide-react'
 
 interface Page {
@@ -29,13 +30,16 @@ interface VariantDetailProps {
   variantId: string
   status: string
   pages: Page[]
+  referenceImageUrl: string | null
 }
 
-export function VariantDetail({ bookId, variantId, status, pages }: VariantDetailProps) {
+export function VariantDetail({ bookId, variantId, status, pages, referenceImageUrl }: VariantDetailProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [currentPage, setCurrentPage] = useState(0)
   const [error, setError] = useState('')
+  const [isUploadingRef, setIsUploadingRef] = useState(false)
+  const [localRefUrl, setLocalRefUrl] = useState<string | null>(null)
 
   const page = pages[currentPage]
 
@@ -55,6 +59,31 @@ export function VariantDetail({ bookId, variantId, status, pages }: VariantDetai
       if (result?.error) setError(result.error)
       else router.refresh()
     })
+  }
+
+  const handleUploadReference = async (file: File) => {
+    setError('')
+    setIsUploadingRef(true)
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('variantId', variantId)
+    formData.append('bookId', bookId)
+    try {
+      const res = await fetch('/api/admin/upload-reference-image', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Error al subir imagen de referencia')
+      } else {
+        setLocalRefUrl(`${data.referenceImageUrl}?t=${Date.now()}`)
+      }
+    } catch {
+      setError('Error de conexión al subir imagen de referencia')
+    } finally {
+      setIsUploadingRef(false)
+    }
   }
 
   const handleRegenerate = () => {
@@ -112,6 +141,52 @@ export function VariantDetail({ bookId, variantId, status, pages }: VariantDetai
           {error}
         </div>
       )}
+
+      {/* Reference image */}
+      <div className="bg-white rounded-xl border border-border-light p-4">
+        <h3 className="text-xs font-semibold text-text uppercase tracking-wide mb-3">
+          Imagen de referencia
+        </h3>
+        {(localRefUrl || referenceImageUrl) ? (
+          <div className="flex items-center gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={localRefUrl || referenceImageUrl!}
+              alt="Imagen de referencia"
+              className="max-h-40 rounded-lg border border-border-light object-contain bg-cream"
+            />
+            <label className="text-xs text-text-muted hover:text-terracota cursor-pointer transition-colors">
+              Cambiar
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) handleUploadReference(f)
+                }}
+              />
+            </label>
+          </div>
+        ) : (
+          <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border hover:border-terracota/30 cursor-pointer transition-colors w-fit">
+            <Upload className="w-3.5 h-3.5 text-text-muted" />
+            <span className="text-xs text-text-light">
+              {isUploadingRef ? 'Subiendo...' : 'Subir imagen de referencia del personaje'}
+            </span>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              disabled={isUploadingRef}
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) handleUploadReference(f)
+              }}
+            />
+          </label>
+        )}
+      </div>
 
       {/* Image viewer */}
       {pages.length > 0 ? (

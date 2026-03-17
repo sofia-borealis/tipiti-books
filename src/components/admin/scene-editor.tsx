@@ -17,6 +17,7 @@ import {
   ChevronUp,
   ChevronDown,
   Image as ImageIcon,
+  Upload,
 } from 'lucide-react'
 
 interface Scene {
@@ -29,6 +30,7 @@ interface Scene {
   lighting: string | null
   emotion: string | null
   character_position: string | null
+  base_illustration_url: string | null
 }
 
 /** Extract text from text_narrative which can be a JSON object {es: "..."} or a plain string */
@@ -60,6 +62,7 @@ export function SceneEditor({ bookId, scenes: initialScenes, stylePrompt }: Scen
   const [editNarrative, setEditNarrative] = useState('')
   const [editPrompt, setEditPrompt] = useState('')
   const [editPosition, setEditPosition] = useState<'top' | 'bottom' | 'overlay'>('bottom')
+  const [uploadingIllustration, setUploadingIllustration] = useState<string | null>(null)
 
   const handleAddScene = () => {
     setError('')
@@ -127,6 +130,32 @@ export function SceneEditor({ bookId, scenes: initialScenes, stylePrompt }: Scen
     startTransition(async () => {
       await reorderScenes(bookId, newScenes.map(s => s.id))
     })
+  }
+
+  const handleUploadIllustration = async (scene: Scene, file: File) => {
+    setError('')
+    setUploadingIllustration(scene.id)
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('sceneId', scene.id)
+    formData.append('bookId', bookId)
+    formData.append('sceneNumber', String(scene.scene_number))
+    try {
+      const res = await fetch('/api/admin/upload-base-illustration', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Error al subir ilustración base')
+      } else {
+        window.location.reload()
+      }
+    } catch {
+      setError('Error de conexión al subir ilustración')
+    } finally {
+      setUploadingIllustration(null)
+    }
   }
 
   const startEditing = (scene: Scene) => {
@@ -220,6 +249,52 @@ export function SceneEditor({ bookId, scenes: initialScenes, stylePrompt }: Scen
                   className="w-full rounded-lg border border-border bg-white px-3 py-2 text-xs text-text font-mono resize-none outline-none focus-visible:border-terracota focus-visible:ring-2 focus-visible:ring-terracota/15"
                   placeholder="Prompt de imagen para esta escena..."
                 />
+              </div>
+              {/* Ilustración base */}
+              <div>
+                <label className="block text-xs font-medium text-text mb-1">
+                  <ImageIcon className="w-3 h-3 inline mr-1" />
+                  Ilustración base
+                </label>
+                {scene.base_illustration_url ? (
+                  <div className="flex items-center gap-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={scene.base_illustration_url}
+                      alt={`Ilustración base escena ${scene.scene_number}`}
+                      className="h-20 rounded-lg border border-border-light object-contain bg-cream"
+                    />
+                    <label className="text-xs text-text-muted hover:text-terracota cursor-pointer transition-colors">
+                      Cambiar
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0]
+                          if (f) handleUploadIllustration(scene, f)
+                        }}
+                      />
+                    </label>
+                  </div>
+                ) : (
+                  <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border hover:border-terracota/30 cursor-pointer transition-colors">
+                    <Upload className="w-3.5 h-3.5 text-text-muted" />
+                    <span className="text-xs text-text-light">
+                      {uploadingIllustration === scene.id ? 'Subiendo...' : 'Subir ilustración base'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      disabled={uploadingIllustration === scene.id}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0]
+                        if (f) handleUploadIllustration(scene, f)
+                      }}
+                    />
+                  </label>
+                )}
               </div>
               <div className="flex items-center gap-4">
                 <div>

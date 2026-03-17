@@ -30,6 +30,7 @@ export default async function VariantDetailPage({
       hair_type,
       has_glasses,
       status,
+      reference_image_url,
       variant_pages(
         id,
         image_url,
@@ -95,6 +96,7 @@ export default async function VariantDetailPage({
             narrativeText: getNarrative(scene?.text_narrative),
           }
         })}
+        referenceImageUrl={variant.reference_image_url ?? null}
       />
     </div>
   )

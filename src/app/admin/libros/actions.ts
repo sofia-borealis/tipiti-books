@@ -15,6 +15,7 @@ const bookSchema = z.object({
   price_usd: z.number().min(0).optional(),
   total_scenes: z.number().int().min(1).max(50).optional(),
   generation_engine: z.string().optional(),
+  customization_prompt: z.string().max(2000).optional(),
   page_width_mm: z.number().int().optional(),
   page_height_mm: z.number().int().optional(),
   total_pages: z.number().int().optional(),

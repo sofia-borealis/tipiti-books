@@ -21,6 +21,7 @@ interface BookFormProps {
     page_width_mm: number | null
     page_height_mm: number | null
     total_pages: number | null
+    customization_prompt: string | null
   }
 }
 
@@ -37,6 +38,10 @@ export function BookForm({ book }: BookFormProps) {
   const [priceCLP, setPriceCLP] = useState(book?.price_clp?.toString() || '29990')
   const [totalScenes, setTotalScenes] = useState(book?.total_scenes?.toString() || '11')
   const [engine, setEngine] = useState(book?.generation_engine || 'flux-kontext-pro')
+  const [customizationPrompt, setCustomizationPrompt] = useState(
+    book?.customization_prompt ||
+    'Change the child in the first image to look like the child in the second image. Keep the mother, background, composition, art style and colors exactly the same. Only modify the child\'s appearance.'
+  )
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,6 +56,7 @@ export function BookForm({ book }: BookFormProps) {
       price_clp: parseInt(priceCLP) || 29990,
       total_scenes: parseInt(totalScenes) || 11,
       generation_engine: engine || undefined,
+      customization_prompt: customizationPrompt || undefined,
     }
 
     startTransition(async () => {
@@ -110,6 +116,20 @@ export function BookForm({ book }: BookFormProps) {
           className="w-full rounded-xl border-[1.5px] border-border bg-white px-4 py-3 text-sm text-text font-mono resize-none outline-none focus-visible:border-terracota focus-visible:ring-[3px] focus-visible:ring-terracota/15"
           placeholder="A watercolor illustration..."
         />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-text mb-1.5">Prompt de personalización</label>
+        <textarea
+          value={customizationPrompt}
+          onChange={(e) => setCustomizationPrompt(e.target.value)}
+          rows={3}
+          className="w-full rounded-xl border-[1.5px] border-border bg-white px-4 py-3 text-sm text-text font-mono resize-none outline-none focus-visible:border-terracota focus-visible:ring-[3px] focus-visible:ring-terracota/15"
+          placeholder="Change the child in the first image to look like..."
+        />
+        <p className="text-xs text-text-muted mt-1">
+          Se envía a Nano Banana Pro al generar variantes. La primera imagen es la ilustración base, la segunda es la referencia del personaje.
+        </p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

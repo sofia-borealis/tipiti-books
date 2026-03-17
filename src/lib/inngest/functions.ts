@@ -1,5 +1,6 @@
 import { inngest } from './client'
 import { generateImage, uploadToStorage } from '@/lib/fal/client'
+import { generateWithNanoBanana } from '@/lib/fal/nano-banana-client'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 
 /**
@@ -46,7 +47,7 @@ export const generateAllVariants = inngest.createFunction(
     const book = await step.run('fetch-book', async () => {
       const { data } = await supabase
         .from('books')
-        .select('id, style_prompt, generation_engine')
+        .select('id, style_prompt, generation_engine, customization_prompt')
         .eq('id', bookId)
         .single()
       if (!data) throw new Error(`Book ${bookId} not found`)
@@ -56,7 +57,7 @@ export const generateAllVariants = inngest.createFunction(
     const scenes = await step.run('fetch-scenes', async () => {
       const { data } = await supabase
         .from('scenes')
-        .select('id, scene_number, visual_description')
+        .select('id, scene_number, visual_description, base_illustration_url')
         .eq('book_id', bookId)
         .order('scene_number')
       return data || []
@@ -109,7 +110,7 @@ export const generateAllVariants = inngest.createFunction(
         .upsert(records, {
           onConflict: 'book_id,gender,skin_tone,hair_color,hair_type,has_glasses',
         })
-        .select('id, gender, skin_tone, hair_color, hair_type, has_glasses')
+        .select('id, gender, skin_tone, hair_color, hair_type, has_glasses, reference_image_url')
 
       if (error) throw new Error(`Failed to create variants: ${error.message}`)
       return data || []
@@ -122,7 +123,9 @@ export const generateAllVariants = inngest.createFunction(
         bookId,
         variantId: variant.id,
         stylePrompt: book.style_prompt,
+        customizationPrompt: book.customization_prompt || '',
         engine: book.generation_engine || 'fal-ai/flux-kontext-pro',
+        referenceImageUrl: variant.reference_image_url || null,
         variant: {
           gender: variant.gender,
           skin_tone: variant.skin_tone,
@@ -134,6 +137,7 @@ export const generateAllVariants = inngest.createFunction(
           id: s.id,
           sceneNumber: s.scene_number,
           visualDescription: s.visual_description,
+          baseIllustrationUrl: s.base_illustration_url || null,
         })),
       },
     }))
@@ -162,7 +166,10 @@ export const generateVariantPages = inngest.createFunction(
   },
   { event: 'variant/generate-pages' },
   async ({ event, step }) => {
-    const { bookId, variantId, stylePrompt, engine, variant, scenes } = event.data
+    const {
+      bookId, variantId, stylePrompt, customizationPrompt,
+      engine, referenceImageUrl, variant, scenes,
+    } = event.data
     const supabase = getAdminClient()
 
     // Mark variant as generating
@@ -176,18 +183,35 @@ export const generateVariantPages = inngest.createFunction(
     // Generate each scene image sequentially (to avoid rate limits)
     for (const scene of scenes) {
       await step.run(`generate-scene-${scene.sceneNumber}`, async () => {
-        const characterDesc = buildCharacterDescription(variant)
-        const scenePrompt = scene.visualDescription
-          ? `${scene.visualDescription}\n\nCharacter: ${characterDesc}`
-          : `A scene featuring a ${characterDesc}`
+        const useNanoBanana = scene.baseIllustrationUrl && referenceImageUrl
 
         try {
-          // Generate image via fal.ai
-          const result = await generateImage({
-            prompt: scenePrompt,
-            stylePrompt,
-            model: engine,
-          })
+          let result: { imageUrl: string; seed: number }
+          let modelUsed: string
+          let promptUsed: string
+
+          if (useNanoBanana) {
+            // Nano Banana Pro/edit: swap child appearance using reference image
+            promptUsed = customizationPrompt || 'Change the child in the first image to look like the child in the second image.'
+            result = await generateWithNanoBanana({
+              prompt: promptUsed,
+              baseIllustrationUrl: scene.baseIllustrationUrl,
+              referenceImageUrl,
+            })
+            modelUsed = 'fal-ai/nano-banana-pro/edit'
+          } else {
+            // Fallback: flux-kontext-pro with text prompt
+            const characterDesc = buildCharacterDescription(variant)
+            promptUsed = scene.visualDescription
+              ? `${scene.visualDescription}\n\nCharacter: ${characterDesc}`
+              : `A scene featuring a ${characterDesc}`
+            result = await generateImage({
+              prompt: promptUsed,
+              stylePrompt,
+              model: engine,
+            })
+            modelUsed = engine
+          }
 
           // Upload to Supabase Storage
           const storagePath = `books/${bookId}/variants/${variantId}/scene-${scene.sceneNumber}.png`
@@ -201,8 +225,8 @@ export const generateVariantPages = inngest.createFunction(
               variant_id: variantId,
               scene_id: scene.id,
               image_url: publicUrl,
-              prompt_used: scenePrompt,
-              generation_model: engine,
+              prompt_used: promptUsed,
+              generation_model: modelUsed,
             },
             { onConflict: 'variant_id,scene_id' }
           )

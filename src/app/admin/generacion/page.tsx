@@ -23,7 +23,7 @@ export default async function GeneracionPage({
     `)
     .order('created_at', { ascending: false })
 
-  // If a book is selected, fetch its variants with status counts
+  // If a book is selected, fetch its variants and scenes for validation
   let variants: Array<{
     id: string
     gender: string
@@ -32,7 +32,13 @@ export default async function GeneracionPage({
     hair_type: string
     has_glasses: boolean
     status: string
+    reference_image_url: string | null
     variant_pages: { count: number }[]
+  }> = []
+
+  let scenes: Array<{
+    scene_number: number
+    base_illustration_url: string | null
   }> = []
 
   if (selectedBookId) {
@@ -46,6 +52,7 @@ export default async function GeneracionPage({
         hair_type,
         has_glasses,
         status,
+        reference_image_url,
         variant_pages(count)
       `)
       .eq('book_id', selectedBookId)
@@ -54,6 +61,14 @@ export default async function GeneracionPage({
       .order('hair_color')
 
     variants = (data || []) as typeof variants
+
+    const { data: sceneData } = await supabase
+      .from('scenes')
+      .select('scene_number, base_illustration_url')
+      .eq('book_id', selectedBookId)
+      .order('scene_number')
+
+    scenes = (sceneData || []) as typeof scenes
   }
 
   const booksWithCounts = (books || []).map(b => ({
@@ -78,6 +93,8 @@ export default async function GeneracionPage({
         books={booksWithCounts}
         variants={variants}
         selectedBookId={selectedBookId || null}
+        scenesWithoutIllustration={scenes.filter(s => !s.base_illustration_url).map(s => s.scene_number)}
+        variantsWithoutReference={variants.filter(v => !v.reference_image_url).length}
       />
     </div>
   )

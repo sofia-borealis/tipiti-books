@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Loader2,
   RefreshCw,
+  AlertTriangle,
 } from 'lucide-react'
 
 interface Book {
@@ -38,12 +39,16 @@ interface GenerationDashboardProps {
   books: Book[]
   variants: Variant[]
   selectedBookId: string | null
+  scenesWithoutIllustration: number[]
+  variantsWithoutReference: number
 }
 
 export function GenerationDashboard({
   books,
   variants,
   selectedBookId,
+  scenesWithoutIllustration,
+  variantsWithoutReference,
 }: GenerationDashboardProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -143,6 +148,29 @@ export function GenerationDashboard({
               color="text-sage"
             />
           </div>
+
+          {/* Nano Banana validation warnings */}
+          {(scenesWithoutIllustration.length > 0 || variantsWithoutReference > 0) && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 space-y-1">
+              <div className="flex items-center gap-2 text-sm font-medium text-yellow-800">
+                <AlertTriangle className="w-4 h-4" />
+                Datos faltantes para Nano Banana Pro
+              </div>
+              {scenesWithoutIllustration.length > 0 && (
+                <p className="text-xs text-yellow-700">
+                  Escenas sin ilustración base: {scenesWithoutIllustration.map(n => `#${n}`).join(', ')}
+                </p>
+              )}
+              {variantsWithoutReference > 0 && (
+                <p className="text-xs text-yellow-700">
+                  {variantsWithoutReference} variante{variantsWithoutReference > 1 ? 's' : ''} sin imagen de referencia
+                </p>
+              )}
+              <p className="text-[10px] text-yellow-600">
+                Las escenas/variantes sin estos datos usarán flux-kontext-pro como fallback.
+              </p>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center gap-3">
