@@ -13,6 +13,7 @@ import {
   Loader2,
   RefreshCw,
   AlertTriangle,
+  ExternalLink,
 } from 'lucide-react'
 
 interface Book {
@@ -32,6 +33,7 @@ interface Variant {
   hair_type: string
   has_glasses: boolean
   status: string
+  reference_image_url: string | null
   variant_pages: { count: number }[]
 }
 
@@ -234,6 +236,7 @@ export function GenerationDashboard({
                 <thead>
                   <tr className="border-b border-border-light bg-cream/50">
                     <th className="text-left text-xs font-medium text-text-muted px-4 py-3">Variante</th>
+                    <th className="text-center text-xs font-medium text-text-muted px-4 py-3 hidden sm:table-cell">Ref</th>
                     <th className="text-center text-xs font-medium text-text-muted px-4 py-3 hidden sm:table-cell">Páginas</th>
                     <th className="text-center text-xs font-medium text-text-muted px-4 py-3">Estado</th>
                     <th className="text-right text-xs font-medium text-text-muted px-4 py-3">Acciones</th>
@@ -256,6 +259,13 @@ export function GenerationDashboard({
                           </div>
                         </td>
                         <td className="px-4 py-2.5 text-center hidden sm:table-cell">
+                          {variant.reference_image_url ? (
+                            <CheckCircle className="w-4 h-4 text-sage mx-auto" />
+                          ) : (
+                            <span className="text-xs text-text-muted">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-center hidden sm:table-cell">
                           <span className="text-sm text-text">
                             {pageCount}/{selectedBook.sceneCount}
                           </span>
@@ -264,18 +274,27 @@ export function GenerationDashboard({
                           <VariantStatus status={variant.status} />
                         </td>
                         <td className="px-4 py-2.5 text-right">
-                          <button
-                            onClick={() => handleGenerateSingle(variant.id)}
-                            disabled={isPending || variant.status === 'generating'}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-terracota/20 text-terracota hover:bg-terracota/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                          >
-                            {generatingVariantId === variant.id ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <Sparkles className="w-3 h-3" />
-                            )}
-                            Generar
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <a
+                              href={`/admin/libros/${selectedBookId}/variantes/${variant.id}`}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-border-light text-text-muted hover:text-text hover:border-border transition-colors"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              Detalle
+                            </a>
+                            <button
+                              onClick={() => handleGenerateSingle(variant.id)}
+                              disabled={isPending || variant.status === 'generating'}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-terracota/20 text-terracota hover:bg-terracota/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              {generatingVariantId === variant.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Sparkles className="w-3 h-3" />
+                              )}
+                              Generar
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )
