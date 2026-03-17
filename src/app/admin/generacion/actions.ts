@@ -83,6 +83,23 @@ export async function triggerSingleVariantGeneration(bookId: string, variantId: 
   }
 }
 
+export async function updateCustomizationPrompt(bookId: string, prompt: string) {
+  try {
+    const supabase = createAdminClient()
+    const { error } = await supabase
+      .from('books')
+      .update({ customization_prompt: prompt })
+      .eq('id', bookId)
+
+    if (error) return { error: `Error al guardar: ${error.message}` }
+
+    revalidatePath('/admin/generacion')
+    return { success: true }
+  } catch (error) {
+    return { error: `Error: ${error instanceof Error ? error.message : 'Unknown'}` }
+  }
+}
+
 export async function createVariant(bookId: string, data: {
   label: string
   gender: 'girl' | 'boy'

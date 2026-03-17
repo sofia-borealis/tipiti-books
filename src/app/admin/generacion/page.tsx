@@ -19,6 +19,7 @@ export default async function GeneracionPage({
       total_scenes,
       style_prompt,
       generation_engine,
+      customization_prompt,
       scenes(count)
     `)
     .order('created_at', { ascending: false })
@@ -79,6 +80,7 @@ export default async function GeneracionPage({
     totalScenes: b.total_scenes || 0,
     sceneCount: (b.scenes as unknown as { count: number }[])?.[0]?.count ?? 0,
     engine: b.generation_engine || 'flux-kontext-pro',
+    customizationPrompt: b.customization_prompt || '',
   }))
 
   return (

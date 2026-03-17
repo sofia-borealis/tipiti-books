@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import {
   triggerSingleVariantGeneration,
   createVariant,
+  updateCustomizationPrompt,
 } from '@/app/admin/generacion/actions'
 import {
   Sparkles,
@@ -20,6 +21,7 @@ import {
   Image as ImageIcon,
   Upload,
   X,
+  Save,
 } from 'lucide-react'
 
 interface Book {
@@ -29,6 +31,7 @@ interface Book {
   totalScenes: number
   sceneCount: number
   engine: string
+  customizationPrompt: string
 }
 
 interface Scene {
@@ -71,6 +74,8 @@ export function GenerationDashboard({
 
   const selectedBook = books.find(b => b.id === selectedBookId)
   const scenesWithoutIllustration = scenes.filter(s => !s.base_illustration_url)
+  const [customPrompt, setCustomPrompt] = useState(selectedBook?.customizationPrompt || '')
+  const [promptSaved, setPromptSaved] = useState(false)
 
   const handleGenerateSingle = (variantId: string) => {
     if (!selectedBookId) return
@@ -169,6 +174,49 @@ export function GenerationDashboard({
                 Súbelas en el editor de escenas.
               </div>
             )}
+          </div>
+
+          {/* Customization prompt */}
+          <div className="bg-white rounded-xl border border-border-light shadow-sm p-4">
+            <label className="block text-xs font-medium text-text mb-1">
+              Prompt de personalización
+            </label>
+            <p className="text-[10px] text-text-muted mb-2">
+              Instrucción que se envía a fal.ai junto con las imágenes. Define cómo transformar la ilustración base con la foto de referencia.
+            </p>
+            <textarea
+              value={customPrompt}
+              onChange={(e) => { setCustomPrompt(e.target.value); setPromptSaved(false) }}
+              rows={3}
+              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-xs text-text font-mono resize-none outline-none focus-visible:border-terracota focus-visible:ring-2 focus-visible:ring-terracota/15"
+              placeholder="Change the child in the first image to look like the child in the second image."
+            />
+            <div className="flex items-center gap-2 mt-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={isPending || promptSaved}
+                onClick={() => {
+                  startTransition(async () => {
+                    const result = await updateCustomizationPrompt(selectedBookId!, customPrompt)
+                    if (result.error) {
+                      setError(result.error)
+                    } else {
+                      setPromptSaved(true)
+                    }
+                  })
+                }}
+              >
+                <Save className="w-3 h-3" />
+                {promptSaved ? 'Guardado' : 'Guardar prompt'}
+              </Button>
+              {promptSaved && (
+                <span className="text-[10px] text-sage">
+                  <CheckCircle className="w-3 h-3 inline mr-0.5" />
+                  Guardado
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Create variant form */}
