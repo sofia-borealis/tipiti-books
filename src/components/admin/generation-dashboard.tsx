@@ -439,8 +439,8 @@ function CreateVariantForm({
       }
 
       onCreated()
-    } catch {
-      setError('Error de conexión')
+    } catch (err) {
+      setError(`Error de conexión: ${err instanceof Error ? err.message : String(err)}`)
       setIsSubmitting(false)
     }
   }
