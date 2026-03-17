@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   createScene,
   updateScene,
@@ -40,6 +39,12 @@ function getNarrative(tn: Record<string, string> | string | null): string {
   return tn.es || Object.values(tn)[0] || ''
 }
 
+/** Calculate the next available scene number */
+function nextSceneNumber(scenes: Scene[]): number {
+  if (scenes.length === 0) return 1
+  return Math.max(...scenes.map(s => s.scene_number)) + 1
+}
+
 interface SceneEditorProps {
   bookId: string
   scenes: Scene[]
@@ -55,36 +60,55 @@ export function SceneEditor({ bookId, scenes: initialScenes, stylePrompt }: Scen
 
   // New scene form state
   const [newNarrative, setNewNarrative] = useState('')
-  const [newPrompt, setNewPrompt] = useState('')
   const [newPosition, setNewPosition] = useState<'top' | 'bottom' | 'overlay'>('bottom')
+  const [newIllustrationFile, setNewIllustrationFile] = useState<File | null>(null)
+  const [newSceneNumber, setNewSceneNumber] = useState(() => nextSceneNumber(initialScenes))
 
   // Edit scene form state
   const [editNarrative, setEditNarrative] = useState('')
-  const [editPrompt, setEditPrompt] = useState('')
   const [editPosition, setEditPosition] = useState<'top' | 'bottom' | 'overlay'>('bottom')
   const [uploadingIllustration, setUploadingIllustration] = useState<string | null>(null)
 
   const handleAddScene = () => {
     setError('')
-    const sceneNumber = scenes.length + 1
 
     startTransition(async () => {
       const result = await createScene(bookId, {
-        scene_number: sceneNumber,
+        scene_number: newSceneNumber,
         text_narrative: newNarrative || undefined,
-        visual_description: newPrompt || undefined,
         text_position: newPosition,
       })
 
       if (result?.error) {
         setError(result.error)
-      } else {
-        setNewNarrative('')
-        setNewPrompt('')
-        setShowNew(false)
-        // Refresh will be handled by revalidation
-        window.location.reload()
+        return
       }
+
+      // Upload illustration if selected
+      if (newIllustrationFile && result.sceneId) {
+        const formData = new FormData()
+        formData.append('file', newIllustrationFile)
+        formData.append('sceneId', result.sceneId)
+        formData.append('bookId', bookId)
+        formData.append('sceneNumber', String(newSceneNumber))
+        try {
+          const res = await fetch('/api/admin/upload-base-illustration', {
+            method: 'POST',
+            body: formData,
+          })
+          const data = await res.json()
+          if (!res.ok) {
+            setError(data.error || 'Escena creada pero error al subir ilustración')
+          }
+        } catch {
+          setError('Escena creada pero error de conexión al subir ilustración')
+        }
+      }
+
+      setNewNarrative('')
+      setNewIllustrationFile(null)
+      setShowNew(false)
+      window.location.reload()
     })
   }
 
@@ -93,7 +117,6 @@ export function SceneEditor({ bookId, scenes: initialScenes, stylePrompt }: Scen
     startTransition(async () => {
       const result = await updateScene(sceneId, bookId, {
         text_narrative: editNarrative || undefined,
-        visual_description: editPrompt || undefined,
         text_position: editPosition,
       })
 
@@ -161,7 +184,6 @@ export function SceneEditor({ bookId, scenes: initialScenes, stylePrompt }: Scen
   const startEditing = (scene: Scene) => {
     setEditingId(scene.id)
     setEditNarrative(getNarrative(scene.text_narrative))
-    setEditPrompt(scene.visual_description || '')
     setEditPosition((scene.text_position as 'top' | 'bottom' | 'overlay') || 'bottom')
   }
 
@@ -190,6 +212,15 @@ export function SceneEditor({ bookId, scenes: initialScenes, stylePrompt }: Scen
             <span className="text-sm font-bold text-terracota w-8">
               #{scene.scene_number}
             </span>
+            {/* Show illustration thumbnail in header */}
+            {scene.base_illustration_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={scene.base_illustration_url}
+                alt={`Escena ${scene.scene_number}`}
+                className="h-8 w-8 rounded object-cover border border-border-light"
+              />
+            )}
             <span className="text-sm text-text flex-1 truncate">
               {getNarrative(scene.text_narrative) || '(sin texto)'}
             </span>
@@ -235,19 +266,6 @@ export function SceneEditor({ bookId, scenes: initialScenes, stylePrompt }: Scen
                   rows={2}
                   className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text resize-none outline-none focus-visible:border-terracota focus-visible:ring-2 focus-visible:ring-terracota/15"
                   placeholder="Texto que aparece en la página..."
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-text mb-1">
-                  <ImageIcon className="w-3 h-3 inline mr-1" />
-                  Image prompt
-                </label>
-                <textarea
-                  value={editPrompt}
-                  onChange={(e) => setEditPrompt(e.target.value)}
-                  rows={3}
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-xs text-text font-mono resize-none outline-none focus-visible:border-terracota focus-visible:ring-2 focus-visible:ring-terracota/15"
-                  placeholder="Prompt de imagen para esta escena..."
                 />
               </div>
               {/* Ilustración base */}
@@ -328,8 +346,20 @@ export function SceneEditor({ bookId, scenes: initialScenes, stylePrompt }: Scen
       {showNew ? (
         <div className="bg-white rounded-xl border-2 border-dashed border-terracota/30 p-4 space-y-3">
           <h3 className="text-sm font-semibold text-text">
-            Nueva escena #{scenes.length + 1}
+            Nueva escena
           </h3>
+          {/* Scene number */}
+          <div>
+            <label className="block text-xs font-medium text-text mb-1">Número de escena</label>
+            <input
+              type="number"
+              min={0}
+              value={newSceneNumber}
+              onChange={(e) => setNewSceneNumber(parseInt(e.target.value) || 0)}
+              className="w-24 rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus-visible:border-terracota focus-visible:ring-2 focus-visible:ring-terracota/15"
+            />
+          </div>
+          {/* Text narrative */}
           <div>
             <label className="block text-xs font-medium text-text mb-1">Texto narrativo</label>
             <textarea
@@ -340,15 +370,42 @@ export function SceneEditor({ bookId, scenes: initialScenes, stylePrompt }: Scen
               placeholder="Texto que aparece en la página..."
             />
           </div>
+          {/* Illustration upload */}
           <div>
-            <label className="block text-xs font-medium text-text mb-1">Image prompt</label>
-            <textarea
-              value={newPrompt}
-              onChange={(e) => setNewPrompt(e.target.value)}
-              rows={3}
-              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-xs text-text font-mono resize-none outline-none focus-visible:border-terracota focus-visible:ring-2 focus-visible:ring-terracota/15"
-              placeholder="Prompt de imagen para esta escena..."
-            />
+            <label className="block text-xs font-medium text-text mb-1">
+              <ImageIcon className="w-3 h-3 inline mr-1" />
+              Ilustración base
+            </label>
+            {newIllustrationFile ? (
+              <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={URL.createObjectURL(newIllustrationFile)}
+                  alt="Preview"
+                  className="h-20 rounded-lg border border-border-light object-contain bg-cream"
+                />
+                <button
+                  onClick={() => setNewIllustrationFile(null)}
+                  className="text-xs text-text-muted hover:text-terracota transition-colors"
+                >
+                  Quitar
+                </button>
+              </div>
+            ) : (
+              <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border hover:border-terracota/30 cursor-pointer transition-colors">
+                <Upload className="w-3.5 h-3.5 text-text-muted" />
+                <span className="text-xs text-text-light">Subir ilustración base</span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) setNewIllustrationFile(f)
+                  }}
+                />
+              </label>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <div>
@@ -364,18 +421,18 @@ export function SceneEditor({ bookId, scenes: initialScenes, stylePrompt }: Scen
               </select>
             </div>
             <div className="flex-1" />
-            <Button variant="secondary" size="sm" onClick={() => setShowNew(false)}>
+            <Button variant="secondary" size="sm" onClick={() => { setShowNew(false); setNewIllustrationFile(null) }}>
               Cancelar
             </Button>
             <Button size="sm" onClick={handleAddScene} disabled={isPending}>
               <Plus className="w-3.5 h-3.5" />
-              Agregar
+              {isPending ? 'Creando...' : 'Agregar'}
             </Button>
           </div>
         </div>
       ) : (
         <button
-          onClick={() => setShowNew(true)}
+          onClick={() => { setShowNew(true); setNewSceneNumber(nextSceneNumber(scenes)) }}
           className="w-full py-4 rounded-xl border-2 border-dashed border-border hover:border-terracota/30 text-text-muted hover:text-terracota transition-colors flex items-center justify-center gap-2 text-sm"
         >
           <Plus className="w-4 h-4" />

@@ -32,9 +32,11 @@ export async function createScene(bookId: string, data: SceneFormData) {
   const supabase = createAdminClient()
 
   const { text_narrative, ...rest } = parsed.data
-  const { error } = await supabase
+  const { data: newScene, error } = await supabase
     .from('scenes')
     .insert({ book_id: bookId, ...rest, text_narrative: wrapNarrative(text_narrative) })
+    .select('id')
+    .single()
 
   if (error) {
     if (error.code === '23505') return { error: 'Ya existe una escena con ese número.' }
@@ -42,7 +44,7 @@ export async function createScene(bookId: string, data: SceneFormData) {
   }
 
   revalidatePath(`/admin/libros/${bookId}/editor`)
-  return { success: true }
+  return { success: true, sceneId: newScene.id }
 }
 
 export async function updateScene(sceneId: string, bookId: string, data: Partial<SceneFormData>) {
