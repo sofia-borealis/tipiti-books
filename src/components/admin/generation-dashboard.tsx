@@ -8,6 +8,7 @@ import {
   triggerSingleVariantGeneration,
   createVariant,
   updateCustomizationPrompt,
+  deleteVariant,
 } from '@/app/admin/generacion/actions'
 import {
   Sparkles,
@@ -22,6 +23,7 @@ import {
   Upload,
   X,
   Save,
+  Trash2,
 } from 'lucide-react'
 
 interface Book {
@@ -86,6 +88,19 @@ export function GenerationDashboard({
       setGeneratingVariantId(null)
       if (result?.error) {
         setError(result.error)
+      }
+    })
+  }
+
+  const handleDeleteVariant = (variantId: string, label: string) => {
+    if (!confirm(`¿Eliminar la variante "${label}"? Se borrarán también todas sus páginas generadas.`)) return
+    setError('')
+    startTransition(async () => {
+      const result = await deleteVariant(variantId)
+      if (result?.error) {
+        setError(result.error)
+      } else {
+        router.refresh()
       }
     })
   }
@@ -321,6 +336,14 @@ export function GenerationDashboard({
                           <ExternalLink className="w-3 h-3" />
                           Detalle
                         </a>
+                        <button
+                          onClick={() => handleDeleteVariant(variant.id, displayLabel)}
+                          disabled={isPending}
+                          className="inline-flex items-center justify-center p-1.5 text-xs rounded-lg border border-border-light text-text-muted hover:text-terracota-dark hover:border-terracota/20 hover:bg-terracota/5 transition-colors disabled:opacity-40"
+                          title="Eliminar variante"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
                       </div>
                     </div>
                   </div>

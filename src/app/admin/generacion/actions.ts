@@ -100,6 +100,30 @@ export async function updateCustomizationPrompt(bookId: string, prompt: string) 
   }
 }
 
+export async function deleteVariant(variantId: string) {
+  try {
+    const supabase = createAdminClient()
+
+    // Delete variant pages first (child records)
+    await supabase
+      .from('variant_pages')
+      .delete()
+      .eq('variant_id', variantId)
+
+    const { error } = await supabase
+      .from('character_variants')
+      .delete()
+      .eq('id', variantId)
+
+    if (error) return { error: `Error al eliminar: ${error.message}` }
+
+    revalidatePath('/admin/generacion')
+    return { success: true }
+  } catch (error) {
+    return { error: `Error: ${error instanceof Error ? error.message : 'Unknown'}` }
+  }
+}
+
 export async function createVariant(bookId: string, data: {
   label: string
   gender: 'girl' | 'boy'
