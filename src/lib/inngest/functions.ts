@@ -124,7 +124,7 @@ export const generateAllVariants = inngest.createFunction(
         variantId: variant.id,
         stylePrompt: book.style_prompt,
         customizationPrompt: book.customization_prompt || '',
-        engine: book.generation_engine || 'fal-ai/flux-kontext-pro',
+        engine: (book.generation_engine?.startsWith('fal-ai/') ? book.generation_engine : `fal-ai/${book.generation_engine || 'flux-kontext-pro'}`),
         referenceImageUrl: variant.reference_image_url || null,
         variant: {
           gender: variant.gender,

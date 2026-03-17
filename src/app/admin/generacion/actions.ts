@@ -4,6 +4,11 @@ import { inngest } from '@/lib/inngest/client'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
+function normalizeEngine(engine: string | null): string {
+  const e = engine || 'flux-kontext-pro'
+  return e.startsWith('fal-ai/') ? e : `fal-ai/${e}`
+}
+
 export async function triggerGeneration(bookId: string) {
   try {
     await inngest.send({
@@ -53,7 +58,7 @@ export async function triggerSingleVariantGeneration(bookId: string, variantId: 
         variantId: variant.id,
         stylePrompt: book.style_prompt,
         customizationPrompt: book.customization_prompt || '',
-        engine: book.generation_engine || 'fal-ai/flux-kontext-pro',
+        engine: normalizeEngine(book.generation_engine),
         referenceImageUrl: variant.reference_image_url || null,
         variant: {
           gender: variant.gender,
