@@ -2,10 +2,10 @@
  * fal.ai Nano Banana Pro/edit client.
  *
  * Takes a base illustration + reference image and swaps the child's appearance
- * using image-to-image editing.
+ * using image-to-image editing via the official @fal-ai/client SDK.
  */
 
-const FAL_API_URL = 'https://queue.fal.run'
+import { fal } from '@fal-ai/client'
 
 interface NanoBananaParams {
   prompt: string
@@ -28,79 +28,30 @@ export async function generateWithNanoBanana({
     throw new Error('FAL_KEY environment variable is not set')
   }
 
-  const model = 'fal-ai/nano-banana-pro/edit'
+  fal.config({ credentials: apiKey })
 
-  const payload = {
+  console.log('[nano-banana] Generating with:', {
     prompt,
-    image_urls: [baseIllustrationUrl, referenceImageUrl],
-    num_images: 1,
-    aspect_ratio: 'auto',
-    output_format: 'png',
-  }
-
-  console.log('[nano-banana] Sending to', `${FAL_API_URL}/${model}`)
-  console.log('[nano-banana] Payload:', JSON.stringify(payload, null, 2))
-
-  const response = await fetch(`${FAL_API_URL}/${model}`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Key ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
+    images: [baseIllustrationUrl, referenceImageUrl],
   })
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`fal.ai API error (${response.status}): ${errorText}`)
-  }
+  const result = await fal.subscribe('fal-ai/nano-banana-pro/edit', {
+    input: {
+      prompt,
+      image_urls: [baseIllustrationUrl, referenceImageUrl],
+      num_images: 1,
+      aspect_ratio: 'auto',
+      output_format: 'png',
+    },
+  })
 
-  const data = await response.json()
-
-  // Handle queued requests
-  if (data.request_id) {
-    return pollForResult(model, data.request_id, apiKey)
+  const imageUrl = result.data?.images?.[0]?.url
+  if (!imageUrl) {
+    throw new Error('No image returned from fal.ai nano-banana-pro/edit')
   }
 
   return {
-    imageUrl: data.images?.[0]?.url || data.output?.images?.[0]?.url,
-    seed: data.seed || 0,
+    imageUrl,
+    seed: (result.data as Record<string, unknown>)?.seed as number || 0,
   }
-}
-
-async function pollForResult(
-  model: string,
-  requestId: string,
-  apiKey: string,
-  maxAttempts = 60
-): Promise<NanoBananaResult> {
-  for (let i = 0; i < maxAttempts; i++) {
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    const statusRes = await fetch(
-      `${FAL_API_URL}/${model}/requests/${requestId}/status`,
-      { headers: { Authorization: `Key ${apiKey}` } }
-    )
-    const status = await statusRes.json()
-
-    if (status.status === 'COMPLETED') {
-      const resultRes = await fetch(
-        `${FAL_API_URL}/${model}/requests/${requestId}`,
-        { headers: { Authorization: `Key ${apiKey}` } }
-      )
-      const result = await resultRes.json()
-      return {
-        imageUrl: result.images?.[0]?.url || result.output?.images?.[0]?.url,
-        seed: result.seed || 0,
-      }
-    }
-
-    if (status.status === 'FAILED') {
-      throw new Error(
-        `fal.ai generation failed: ${status.error || 'Unknown error'}`
-      )
-    }
-  }
-
-  throw new Error('fal.ai generation timed out')
 }
