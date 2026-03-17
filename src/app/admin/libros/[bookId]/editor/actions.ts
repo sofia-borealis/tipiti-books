@@ -40,7 +40,7 @@ export async function createScene(bookId: string, data: SceneFormData) {
 
   if (error) {
     if (error.code === '23505') return { error: 'Ya existe una escena con ese número.' }
-    return { error: 'Error al crear la escena.' }
+    return { error: `Error al crear la escena: ${error.message}` }
   }
 
   revalidatePath(`/admin/libros/${bookId}/editor`)
