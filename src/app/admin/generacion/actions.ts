@@ -77,3 +77,43 @@ export async function triggerSingleVariantGeneration(bookId: string, variantId: 
     return { error: `Error al iniciar generación: ${error instanceof Error ? error.message : 'Unknown'}` }
   }
 }
+
+export async function createVariant(bookId: string, data: {
+  label: string
+  gender: 'girl' | 'boy'
+  skin_tone?: string
+  hair_color?: string
+  hair_type?: string
+  has_glasses?: boolean
+}) {
+  try {
+    const supabase = createAdminClient()
+
+    const { data: variant, error } = await supabase
+      .from('character_variants')
+      .insert({
+        book_id: bookId,
+        label: data.label,
+        gender: data.gender,
+        skin_tone: data.skin_tone || 'medium',
+        hair_color: data.hair_color || 'brown',
+        hair_type: data.hair_type || 'straight',
+        has_glasses: data.has_glasses ?? false,
+        status: 'pending',
+      })
+      .select('id')
+      .single()
+
+    if (error) {
+      if (error.code === '23505') {
+        return { error: 'Ya existe una variante con estas mismas características para este libro.' }
+      }
+      return { error: `Error al crear variante: ${error.message}` }
+    }
+
+    revalidatePath('/admin/generacion')
+    return { success: true, variantId: variant.id }
+  } catch (error) {
+    return { error: `Error al crear variante: ${error instanceof Error ? error.message : 'Unknown'}` }
+  }
+}

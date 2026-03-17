@@ -23,9 +23,10 @@ export default async function GeneracionPage({
     `)
     .order('created_at', { ascending: false })
 
-  // If a book is selected, fetch its variants and scenes for validation
+  // If a book is selected, fetch its variants and scenes
   let variants: Array<{
     id: string
+    label: string | null
     gender: string
     skin_tone: string
     hair_color: string
@@ -37,6 +38,7 @@ export default async function GeneracionPage({
   }> = []
 
   let scenes: Array<{
+    id: string
     scene_number: number
     base_illustration_url: string | null
   }> = []
@@ -46,6 +48,7 @@ export default async function GeneracionPage({
       .from('character_variants')
       .select(`
         id,
+        label,
         gender,
         skin_tone,
         hair_color,
@@ -56,15 +59,13 @@ export default async function GeneracionPage({
         variant_pages(count)
       `)
       .eq('book_id', selectedBookId)
-      .order('gender')
-      .order('skin_tone')
-      .order('hair_color')
+      .order('created_at', { ascending: false })
 
     variants = (data || []) as typeof variants
 
     const { data: sceneData } = await supabase
       .from('scenes')
-      .select('scene_number, base_illustration_url')
+      .select('id, scene_number, base_illustration_url')
       .eq('book_id', selectedBookId)
       .order('scene_number')
 
@@ -83,18 +84,17 @@ export default async function GeneracionPage({
   return (
     <div>
       <h1 className="text-2xl font-bold text-text font-display mb-1">
-        Generación de variantes
+        Generación de ilustraciones
       </h1>
       <p className="text-sm text-text-muted mb-6">
-        Genera las ilustraciones de cada combinación de personaje via fal.ai
+        Genera las ilustraciones personalizadas de cada variante via fal.ai
       </p>
 
       <GenerationDashboard
         books={booksWithCounts}
         variants={variants}
+        scenes={scenes}
         selectedBookId={selectedBookId || null}
-        scenesWithoutIllustration={scenes.filter(s => !s.base_illustration_url).map(s => s.scene_number)}
-        variantsWithoutReference={variants.filter(v => !v.reference_image_url).length}
       />
     </div>
   )

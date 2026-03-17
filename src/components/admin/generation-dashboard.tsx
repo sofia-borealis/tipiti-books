@@ -3,17 +3,23 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { triggerGeneration, triggerSingleVariantGeneration } from '@/app/admin/generacion/actions'
+import { Input } from '@/components/ui/input'
+import {
+  triggerSingleVariantGeneration,
+  createVariant,
+} from '@/app/admin/generacion/actions'
 import {
   Sparkles,
   BookOpen,
   CheckCircle,
-  Clock,
-  AlertCircle,
   Loader2,
   RefreshCw,
   AlertTriangle,
   ExternalLink,
+  Plus,
+  Image as ImageIcon,
+  Upload,
+  X,
 } from 'lucide-react'
 
 interface Book {
@@ -25,8 +31,15 @@ interface Book {
   engine: string
 }
 
+interface Scene {
+  id: string
+  scene_number: number
+  base_illustration_url: string | null
+}
+
 interface Variant {
   id: string
+  label: string | null
   gender: string
   skin_tone: string
   hair_color: string
@@ -40,44 +53,24 @@ interface Variant {
 interface GenerationDashboardProps {
   books: Book[]
   variants: Variant[]
+  scenes: Scene[]
   selectedBookId: string | null
-  scenesWithoutIllustration: number[]
-  variantsWithoutReference: number
 }
 
 export function GenerationDashboard({
   books,
   variants,
+  scenes,
   selectedBookId,
-  scenesWithoutIllustration,
-  variantsWithoutReference,
 }: GenerationDashboardProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState('')
   const [generatingVariantId, setGeneratingVariantId] = useState<string | null>(null)
+  const [showCreateForm, setShowCreateForm] = useState(false)
 
   const selectedBook = books.find(b => b.id === selectedBookId)
-
-  // Status counts
-  const statusCounts = variants.reduce((acc, v) => {
-    acc[v.status] = (acc[v.status] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
-
-  const handleGenerate = () => {
-    if (!selectedBookId) return
-    setError('')
-    startTransition(async () => {
-      const result = await triggerGeneration(selectedBookId)
-      if (result?.error) {
-        setError(result.error)
-      } else {
-        setShowConfirm(false)
-      }
-    })
-  }
+  const scenesWithoutIllustration = scenes.filter(s => !s.base_illustration_url)
 
   const handleGenerateSingle = (variantId: string) => {
     if (!selectedBookId) return
@@ -131,92 +124,77 @@ export function GenerationDashboard({
 
       {selectedBook && (
         <>
-          {/* Progress overview */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            <StatusCard
-              label="Total"
-              count={variants.length}
-              icon={<Sparkles className="w-4 h-4" />}
-              color="text-text"
-            />
-            <StatusCard
-              label="Pendientes"
-              count={statusCounts['pending'] || 0}
-              icon={<Clock className="w-4 h-4" />}
-              color="text-text-muted"
-            />
-            <StatusCard
-              label="Generando"
-              count={statusCounts['generating'] || 0}
-              icon={<Loader2 className="w-4 h-4 animate-spin" />}
-              color="text-blue"
-            />
-            <StatusCard
-              label="Por revisar"
-              count={statusCounts['pending_review'] || 0}
-              icon={<AlertCircle className="w-4 h-4" />}
-              color="text-terracota"
-            />
-            <StatusCard
-              label="Aprobadas"
-              count={statusCounts['approved'] || 0}
-              icon={<CheckCircle className="w-4 h-4" />}
-              color="text-sage"
-            />
-          </div>
-
-          {/* Nano Banana validation warnings */}
-          {(scenesWithoutIllustration.length > 0 || variantsWithoutReference > 0) && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 space-y-1">
-              <div className="flex items-center gap-2 text-sm font-medium text-yellow-800">
-                <AlertTriangle className="w-4 h-4" />
-                Datos faltantes para Nano Banana Pro
+          {/* Scenes gallery */}
+          <div className="bg-white rounded-xl border border-border-light shadow-sm p-4">
+            <h2 className="text-sm font-semibold text-text mb-3">
+              Escenas base ({scenes.length})
+            </h2>
+            {scenes.length > 0 ? (
+              <div className="flex gap-3 overflow-x-auto pb-2">
+                {scenes.map(scene => (
+                  <div
+                    key={scene.id}
+                    className="shrink-0 w-[120px] rounded-lg border border-border-light overflow-hidden"
+                  >
+                    <div className="aspect-square bg-cream flex items-center justify-center">
+                      {scene.base_illustration_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={scene.base_illustration_url}
+                          alt={`Escena ${scene.scene_number}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <ImageIcon className="w-8 h-8 text-text-muted/20" />
+                      )}
+                    </div>
+                    <div className="px-2 py-1.5 text-center">
+                      <span className="text-[10px] font-medium text-text-muted">
+                        Escena {scene.scene_number}
+                      </span>
+                      {!scene.base_illustration_url && (
+                        <span className="block text-[9px] text-terracota">Sin ilustración</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-              {scenesWithoutIllustration.length > 0 && (
-                <p className="text-xs text-yellow-700">
-                  Escenas sin ilustración base: {scenesWithoutIllustration.map(n => `#${n}`).join(', ')}
-                </p>
-              )}
-              {variantsWithoutReference > 0 && (
-                <p className="text-xs text-yellow-700">
-                  {variantsWithoutReference} variante{variantsWithoutReference > 1 ? 's' : ''} sin imagen de referencia
-                </p>
-              )}
-              <p className="text-[10px] text-yellow-600">
-                Las escenas/variantes sin estos datos usarán flux-kontext-pro como fallback.
-              </p>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex items-center gap-3">
-            {!showConfirm ? (
-              <Button
-                onClick={() => setShowConfirm(true)}
-                disabled={isPending || selectedBook.sceneCount === 0}
-              >
-                <Sparkles className="w-4 h-4" />
-                Generar todas las variantes
-              </Button>
             ) : (
-              <div className="flex items-center gap-2 bg-terracota/5 border border-terracota/20 rounded-lg px-4 py-3">
-                <p className="text-sm text-text">
-                  ¿Generar ~{estimateVariantCount()} variantes × {selectedBook.sceneCount} escenas?
-                  Esto puede tomar varias horas.
-                </p>
-                <Button size="sm" onClick={handleGenerate} disabled={isPending}>
-                  {isPending ? 'Iniciando...' : 'Confirmar'}
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setShowConfirm(false)}
-                  disabled={isPending}
-                >
-                  Cancelar
-                </Button>
+              <p className="text-sm text-text-muted">No hay escenas creadas para este libro.</p>
+            )}
+            {scenesWithoutIllustration.length > 0 && (
+              <div className="flex items-center gap-2 mt-3 text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                {scenesWithoutIllustration.length} escena{scenesWithoutIllustration.length > 1 ? 's' : ''} sin ilustración base.
+                Súbelas en el editor de escenas.
               </div>
             )}
+          </div>
+
+          {/* Create variant form */}
+          <div className="bg-white rounded-xl border border-border-light shadow-sm p-4">
+            {!showCreateForm ? (
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="flex items-center gap-2 text-sm font-medium text-terracota hover:text-terracota-dark transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Crear nueva variante
+              </button>
+            ) : (
+              <CreateVariantForm
+                bookId={selectedBookId!}
+                onClose={() => setShowCreateForm(false)}
+                onCreated={() => {
+                  setShowCreateForm(false)
+                  router.refresh()
+                }}
+              />
+            )}
+          </div>
+
+          {/* Actions bar */}
+          <div className="flex items-center gap-3">
             <Button variant="secondary" onClick={handleRefresh} disabled={isPending}>
               <RefreshCw className={`w-4 h-4 ${isPending ? 'animate-spin' : ''}`} />
               Actualizar
@@ -229,86 +207,83 @@ export function GenerationDashboard({
             </div>
           )}
 
-          {/* Variants table */}
-          {variants.length > 0 && (
-            <div className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border-light bg-cream/50">
-                    <th className="text-left text-xs font-medium text-text-muted px-4 py-3">Variante</th>
-                    <th className="text-center text-xs font-medium text-text-muted px-4 py-3 hidden sm:table-cell">Ref</th>
-                    <th className="text-center text-xs font-medium text-text-muted px-4 py-3 hidden sm:table-cell">Páginas</th>
-                    <th className="text-center text-xs font-medium text-text-muted px-4 py-3">Estado</th>
-                    <th className="text-right text-xs font-medium text-text-muted px-4 py-3">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {variants.map(variant => {
-                    const pageCount = (variant.variant_pages as unknown as { count: number }[])?.[0]?.count ?? 0
-                    return (
-                      <tr key={variant.id} className="border-b border-border-light last:border-0 hover:bg-cream/30">
-                        <td className="px-4 py-2.5">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-medium text-text">
-                              {variant.gender === 'girl' ? '👧' : '👦'}
-                            </span>
-                            <Badge>{variant.skin_tone}</Badge>
-                            <Badge>{variant.hair_color}</Badge>
-                            <Badge>{variant.hair_type}</Badge>
-                            {variant.has_glasses && <Badge>lentes</Badge>}
-                          </div>
-                        </td>
-                        <td className="px-4 py-2.5 text-center hidden sm:table-cell">
-                          {variant.reference_image_url ? (
-                            <CheckCircle className="w-4 h-4 text-sage mx-auto" />
-                          ) : (
-                            <span className="text-xs text-text-muted">—</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-2.5 text-center hidden sm:table-cell">
-                          <span className="text-sm text-text">
-                            {pageCount}/{selectedBook.sceneCount}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2.5 text-center">
-                          <VariantStatus status={variant.status} />
-                        </td>
-                        <td className="px-4 py-2.5 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <a
-                              href={`/admin/libros/${selectedBookId}/variantes/${variant.id}`}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-border-light text-text-muted hover:text-text hover:border-border transition-colors"
-                            >
-                              <ExternalLink className="w-3 h-3" />
-                              Detalle
-                            </a>
-                            <button
-                              onClick={() => handleGenerateSingle(variant.id)}
-                              disabled={isPending || variant.status === 'generating'}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-terracota/20 text-terracota hover:bg-terracota/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                              {generatingVariantId === variant.id ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <Sparkles className="w-3 h-3" />
-                              )}
-                              Generar
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {/* Variant cards */}
+          {variants.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {variants.map(variant => {
+                const pageCount = (variant.variant_pages as unknown as { count: number }[])?.[0]?.count ?? 0
+                const displayLabel = variant.label || buildVariantLabel(variant)
+                return (
+                  <div
+                    key={variant.id}
+                    className="bg-white rounded-xl border border-border-light shadow-sm overflow-hidden"
+                  >
+                    {/* Reference image */}
+                    <div className="aspect-square bg-cream flex items-center justify-center max-h-48">
+                      {variant.reference_image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={variant.reference_image_url}
+                          alt={displayLabel}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-center p-4">
+                          <ImageIcon className="w-10 h-10 text-text-muted/20 mx-auto mb-1" />
+                          <span className="text-[10px] text-text-muted">Sin imagen de referencia</span>
+                        </div>
+                      )}
+                    </div>
 
-          {variants.length === 0 && (
+                    {/* Info */}
+                    <div className="p-3 space-y-2">
+                      <div>
+                        <p className="text-sm font-medium text-text">{displayLabel}</p>
+                        <p className="text-[10px] text-text-muted">
+                          {variant.gender === 'girl' ? 'Niña' : 'Niño'} · {variant.skin_tone} · {variant.hair_color} · {variant.hair_type}
+                          {variant.has_glasses ? ' · lentes' : ''}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-text-muted">
+                          {pageCount}/{selectedBook.sceneCount} escenas
+                        </span>
+                        <VariantStatus status={variant.status} />
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => handleGenerateSingle(variant.id)}
+                          disabled={isPending || variant.status === 'generating'}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-terracota/20 text-terracota hover:bg-terracota/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {generatingVariantId === variant.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Sparkles className="w-3 h-3" />
+                          )}
+                          Generar
+                        </button>
+                        <a
+                          href={`/admin/libros/${selectedBookId}/variantes/${variant.id}`}
+                          className="inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-border-light text-text-muted hover:text-text hover:border-border transition-colors"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Detalle
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
             <div className="bg-white rounded-xl border border-border-light p-8 text-center">
               <Sparkles className="w-10 h-10 text-text-muted/30 mx-auto mb-3" />
               <p className="text-sm text-text-muted">
-                No hay variantes generadas aún. Haz clic en &quot;Generar todas las variantes&quot; para comenzar.
+                No hay variantes aún. Crea una nueva variante subiendo la foto de referencia del niño/a.
               </p>
             </div>
           )}
@@ -318,35 +293,266 @@ export function GenerationDashboard({
   )
 }
 
-function StatusCard({
-  label,
-  count,
-  icon,
-  color,
+/* ─── Create Variant Form ─── */
+
+function CreateVariantForm({
+  bookId,
+  onClose,
+  onCreated,
 }: {
-  label: string
-  count: number
-  icon: React.ReactNode
-  color: string
+  bookId: string
+  onClose: () => void
+  onCreated: () => void
 }) {
+  const [label, setLabel] = useState('')
+  const [gender, setGender] = useState<'girl' | 'boy'>('girl')
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [skinTone, setSkinTone] = useState('medium')
+  const [hairColor, setHairColor] = useState('brown')
+  const [hairType, setHairType] = useState('straight')
+  const [hasGlasses, setHasGlasses] = useState(false)
+  const [referenceFile, setReferenceFile] = useState<File | null>(null)
+  const [referencePreview, setReferencePreview] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleFileSelect = (file: File) => {
+    setReferenceFile(file)
+    setReferencePreview(URL.createObjectURL(file))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!label.trim()) return
+    if (!referenceFile) {
+      setError('Selecciona una imagen de referencia del niño/a')
+      return
+    }
+
+    setError('')
+    setIsSubmitting(true)
+
+    try {
+      // Step 1: Create variant record
+      const result = await createVariant(bookId, {
+        label: label.trim(),
+        gender,
+        skin_tone: skinTone,
+        hair_color: hairColor,
+        hair_type: hairType,
+        has_glasses: hasGlasses,
+      })
+
+      if (result.error) {
+        setError(result.error)
+        setIsSubmitting(false)
+        return
+      }
+
+      // Step 2: Upload reference image
+      const formData = new FormData()
+      formData.append('file', referenceFile)
+      formData.append('variantId', result.variantId!)
+      formData.append('bookId', bookId)
+
+      const uploadRes = await fetch('/api/admin/upload-reference-image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!uploadRes.ok) {
+        const data = await uploadRes.json()
+        setError(data.error || 'Error al subir la imagen de referencia')
+        setIsSubmitting(false)
+        return
+      }
+
+      onCreated()
+    } catch {
+      setError('Error de conexión')
+      setIsSubmitting(false)
+    }
+  }
+
   return (
-    <div className="bg-white rounded-xl border border-border-light p-4">
-      <div className={`flex items-center gap-1.5 ${color}`}>
-        {icon}
-        <span className="text-xs font-medium">{label}</span>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-text">Crear nueva variante</h3>
+        <button type="button" onClick={onClose} className="text-text-muted hover:text-text">
+          <X className="w-4 h-4" />
+        </button>
       </div>
-      <p className="text-2xl font-bold text-text mt-1">{count}</p>
-    </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Label */}
+        <div>
+          <label className="block text-xs font-medium text-text mb-1">Nombre / etiqueta *</label>
+          <Input
+            value={label}
+            onChange={e => setLabel(e.target.value)}
+            placeholder="Ej: Sofía, Mateo..."
+            required
+          />
+        </div>
+
+        {/* Gender */}
+        <div>
+          <label className="block text-xs font-medium text-text mb-1">Género *</label>
+          <div className="flex gap-2 mt-1">
+            <button
+              type="button"
+              onClick={() => setGender('girl')}
+              className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                gender === 'girl'
+                  ? 'border-terracota bg-terracota/5 text-terracota font-medium'
+                  : 'border-border-light text-text-muted hover:border-terracota/30'
+              }`}
+            >
+              Niña
+            </button>
+            <button
+              type="button"
+              onClick={() => setGender('boy')}
+              className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-colors ${
+                gender === 'boy'
+                  ? 'border-terracota bg-terracota/5 text-terracota font-medium'
+                  : 'border-border-light text-text-muted hover:border-terracota/30'
+              }`}
+            >
+              Niño
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Reference image upload */}
+      <div>
+        <label className="block text-xs font-medium text-text mb-1">Imagen de referencia *</label>
+        {referencePreview ? (
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={referencePreview}
+              alt="Preview"
+              className="w-20 h-20 rounded-lg object-cover border border-border-light"
+            />
+            <label className="text-xs text-text-muted hover:text-terracota cursor-pointer transition-colors">
+              Cambiar imagen
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={e => {
+                  const f = e.target.files?.[0]
+                  if (f) handleFileSelect(f)
+                }}
+              />
+            </label>
+          </div>
+        ) : (
+          <label className="flex items-center gap-2 px-4 py-3 rounded-lg border border-dashed border-border hover:border-terracota/30 cursor-pointer transition-colors w-fit">
+            <Upload className="w-4 h-4 text-text-muted" />
+            <span className="text-xs text-text-light">Subir foto del niño/a</span>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={e => {
+                const f = e.target.files?.[0]
+                if (f) handleFileSelect(f)
+              }}
+            />
+          </label>
+        )}
+      </div>
+
+      {/* Advanced options */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="text-xs text-text-muted hover:text-text transition-colors"
+        >
+          {showAdvanced ? '▾' : '▸'} Opciones avanzadas
+        </button>
+        {showAdvanced && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
+            <div>
+              <label className="block text-[10px] font-medium text-text-muted mb-1">Tono de piel</label>
+              <select
+                value={skinTone}
+                onChange={e => setSkinTone(e.target.value)}
+                className="w-full rounded-lg border border-border-light px-2 py-1.5 text-xs text-text bg-white"
+              >
+                <option value="light">Claro</option>
+                <option value="medium">Medio</option>
+                <option value="dark">Oscuro</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-medium text-text-muted mb-1">Color de pelo</label>
+              <select
+                value={hairColor}
+                onChange={e => setHairColor(e.target.value)}
+                className="w-full rounded-lg border border-border-light px-2 py-1.5 text-xs text-text bg-white"
+              >
+                <option value="blonde">Rubio</option>
+                <option value="brown">Castaño</option>
+                <option value="black">Negro</option>
+                <option value="red">Pelirrojo</option>
+                <option value="dark-brown">Castaño oscuro</option>
+                <option value="auburn">Cobrizo</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-medium text-text-muted mb-1">Tipo de pelo</label>
+              <select
+                value={hairType}
+                onChange={e => setHairType(e.target.value)}
+                className="w-full rounded-lg border border-border-light px-2 py-1.5 text-xs text-text bg-white"
+              >
+                <option value="straight">Liso</option>
+                <option value="curly">Rizado</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-medium text-text-muted mb-1">Lentes</label>
+              <label className="flex items-center gap-2 mt-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={hasGlasses}
+                  onChange={e => setHasGlasses(e.target.checked)}
+                  className="rounded"
+                />
+                <span className="text-xs text-text">Usa lentes</span>
+              </label>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {error && (
+        <p className="text-xs text-terracota-dark">{error}</p>
+      )}
+
+      <div className="flex gap-2">
+        <Button type="submit" disabled={isSubmitting || !label.trim()}>
+          {isSubmitting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Plus className="w-4 h-4" />
+          )}
+          {isSubmitting ? 'Creando...' : 'Crear variante'}
+        </Button>
+        <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
+          Cancelar
+        </Button>
+      </div>
+    </form>
   )
 }
 
-function Badge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="px-1.5 py-0.5 text-[10px] font-medium bg-cream text-text-muted rounded">
-      {children}
-    </span>
-  )
-}
+/* ─── Helpers ─── */
 
 function VariantStatus({ status }: { status: string }) {
   const config: Record<string, { label: string; className: string }> = {
@@ -357,18 +563,19 @@ function VariantStatus({ status }: { status: string }) {
     rejected: { label: 'Rechazada', className: 'text-terracota-dark bg-terracota/10' },
     failed: { label: 'Error', className: 'text-terracota-dark bg-terracota/10' },
   }
-
   const c = config[status] || config['pending']
-
   return (
-    <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${c.className}`}>
+    <span className={`inline-block px-2 py-0.5 text-[10px] font-medium rounded-full ${c.className}`}>
       {c.label}
     </span>
   )
 }
 
-function estimateVariantCount(): number {
-  // 2 genders × (4+4+1 hair colors) × 2 hair types × 2 glasses = 2 × 9 × 2 × 2 = 72
-  // But with 3 skin tones: light(4) + medium(4) + dark(1) = 9 combos per gender/hairtype/glasses
-  return 2 * 9 * 2 * 2
+function buildVariantLabel(variant: {
+  gender: string
+  skin_tone: string
+  hair_color: string
+}): string {
+  const genderLabel = variant.gender === 'girl' ? 'Niña' : 'Niño'
+  return `${genderLabel} — ${variant.skin_tone}, ${variant.hair_color}`
 }
