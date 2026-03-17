@@ -8,6 +8,7 @@ import {
   rejectVariant,
   regenerateVariant,
 } from '@/app/admin/libros/[bookId]/variantes/actions'
+import { resizeImage } from '@/lib/utils/resize-image'
 import {
   CheckCircle,
   XCircle,
@@ -64,8 +65,9 @@ export function VariantDetail({ bookId, variantId, status, pages, referenceImage
   const handleUploadReference = async (file: File) => {
     setError('')
     setIsUploadingRef(true)
+    const compressed = await resizeImage(file)
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('file', compressed)
     formData.append('variantId', variantId)
     formData.append('bookId', bookId)
     try {

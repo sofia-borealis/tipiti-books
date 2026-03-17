@@ -10,6 +10,7 @@ import {
   updateCustomizationPrompt,
   deleteVariant,
 } from '@/app/admin/generacion/actions'
+import { resizeImage } from '@/lib/utils/resize-image'
 import {
   Sparkles,
   BookOpen,
@@ -420,9 +421,10 @@ function CreateVariantForm({
         return
       }
 
-      // Step 2: Upload reference image
+      // Step 2: Upload reference image (resize to avoid Vercel 4.5MB limit)
+      const compressed = await resizeImage(referenceFile)
       const formData = new FormData()
-      formData.append('file', referenceFile)
+      formData.append('file', compressed)
       formData.append('variantId', result.variantId!)
       formData.append('bookId', bookId)
 
