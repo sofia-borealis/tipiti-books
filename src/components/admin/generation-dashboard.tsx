@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { triggerGeneration } from '@/app/admin/generacion/actions'
+import { triggerGeneration, triggerSingleVariantGeneration } from '@/app/admin/generacion/actions'
 import {
   Sparkles,
   BookOpen,
@@ -54,6 +54,7 @@ export function GenerationDashboard({
   const [isPending, startTransition] = useTransition()
   const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState('')
+  const [generatingVariantId, setGeneratingVariantId] = useState<string | null>(null)
 
   const selectedBook = books.find(b => b.id === selectedBookId)
 
@@ -72,6 +73,19 @@ export function GenerationDashboard({
         setError(result.error)
       } else {
         setShowConfirm(false)
+      }
+    })
+  }
+
+  const handleGenerateSingle = (variantId: string) => {
+    if (!selectedBookId) return
+    setError('')
+    setGeneratingVariantId(variantId)
+    startTransition(async () => {
+      const result = await triggerSingleVariantGeneration(selectedBookId, variantId)
+      setGeneratingVariantId(null)
+      if (result?.error) {
+        setError(result.error)
       }
     })
   }
@@ -222,6 +236,7 @@ export function GenerationDashboard({
                     <th className="text-left text-xs font-medium text-text-muted px-4 py-3">Variante</th>
                     <th className="text-center text-xs font-medium text-text-muted px-4 py-3 hidden sm:table-cell">Páginas</th>
                     <th className="text-center text-xs font-medium text-text-muted px-4 py-3">Estado</th>
+                    <th className="text-right text-xs font-medium text-text-muted px-4 py-3">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -247,6 +262,20 @@ export function GenerationDashboard({
                         </td>
                         <td className="px-4 py-2.5 text-center">
                           <VariantStatus status={variant.status} />
+                        </td>
+                        <td className="px-4 py-2.5 text-right">
+                          <button
+                            onClick={() => handleGenerateSingle(variant.id)}
+                            disabled={isPending || variant.status === 'generating'}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg border border-terracota/20 text-terracota hover:bg-terracota/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {generatingVariantId === variant.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Sparkles className="w-3 h-3" />
+                            )}
+                            Generar
+                          </button>
                         </td>
                       </tr>
                     )
