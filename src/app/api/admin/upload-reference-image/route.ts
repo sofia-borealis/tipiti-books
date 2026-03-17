@@ -16,14 +16,18 @@ export async function POST(request: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer())
+    const contentType = file.type || 'image/png'
+    const ext = contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpg' : contentType.includes('webp') ? 'webp' : 'png'
 
     const supabase = createAdminClient()
-    const storagePath = `references/${bookId}/${variantId}.png`
+    const storagePath = `references/${bookId}/${variantId}.${ext}`
+
+    console.log('[upload-ref] Uploading to character-sheets/', storagePath, 'size:', buffer.length)
 
     const { error: uploadError } = await supabase.storage
       .from('character-sheets')
       .upload(storagePath, buffer, {
-        contentType: 'image/png',
+        contentType,
         upsert: true,
       })
 

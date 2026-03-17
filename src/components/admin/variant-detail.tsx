@@ -73,14 +73,20 @@ export function VariantDetail({ bookId, variantId, status, pages, referenceImage
         method: 'POST',
         body: formData,
       })
-      const data = await res.json()
       if (!res.ok) {
-        setError(data.error || 'Error al subir imagen de referencia')
+        const text = await res.text()
+        try {
+          const data = JSON.parse(text)
+          setError(data.error || `Error ${res.status}`)
+        } catch {
+          setError(`Error ${res.status}: ${text.slice(0, 200)}`)
+        }
       } else {
+        const data = await res.json()
         setLocalRefUrl(`${data.referenceImageUrl}?t=${Date.now()}`)
       }
-    } catch {
-      setError('Error de conexión al subir imagen de referencia')
+    } catch (err) {
+      setError(`Error al subir referencia: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setIsUploadingRef(false)
     }
