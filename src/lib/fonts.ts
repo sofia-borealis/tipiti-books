@@ -1,6 +1,6 @@
-import { Fraunces, DM_Sans, Caveat } from 'next/font/google'
+import { Bodoni_Moda, DM_Sans, Caveat } from 'next/font/google'
 
-export const fraunces = Fraunces({
+export const bodoniModa = Bodoni_Moda({
   subsets: ['latin'],
   variable: '--font-display',
   display: 'swap',

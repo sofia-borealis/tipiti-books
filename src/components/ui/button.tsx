@@ -5,7 +5,7 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-base font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-terracota/30",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-base font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-terracota/50",
   {
     variants: {
       variant: {
@@ -18,6 +18,10 @@ const buttonVariants = cva(
         destructive:
           "bg-terracota-dark text-cream rounded-full hover:bg-terracota-dark/90",
         link: "text-terracota underline-offset-4 hover:underline",
+        forest:
+          "bg-berry text-cream rounded-[4px] uppercase tracking-[0.06em] font-bold text-[13px] hover:bg-berry-deep hover:shadow-[0_4px_16px_rgba(147,66,99,0.3)] hover:-translate-y-0.5 focus-visible:ring-berry/50",
+        "forest-outline":
+          "bg-transparent border-[1.5px] border-berry text-berry rounded-[4px] uppercase tracking-[0.06em] font-bold text-[13px] hover:bg-berry hover:text-cream focus-visible:ring-berry/50",
       },
       size: {
         default: "h-12 px-8 py-3.5",

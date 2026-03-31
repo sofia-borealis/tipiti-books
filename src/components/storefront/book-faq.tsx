@@ -9,24 +9,24 @@ import {
 
 const faqs = [
   {
-    q: '¿Cómo funciona la personalización?',
-    a: 'Eliges el nombre del niño/a, su apariencia (color de piel, pelo, lentes) y escribes una dedicatoria. Nosotros generamos las ilustraciones con esa combinación exacta.',
+    q: '¿Cuánto demora en llegar mi libro?',
+    a: 'El proceso de personalización toma 5-7 días hábiles. El envío dentro de Chile es gratuito y demora 3-5 días hábiles adicionales.',
   },
   {
-    q: '¿Cuánto demora en llegar?',
-    a: 'El libro se imprime y envía en 8-12 días hábiles a todo Chile. Recibirás un email con tu número de seguimiento.',
+    q: '¿De qué material es el libro?',
+    a: 'Tapa dura con papel interior de 200g, ideal para manos pequeñas. Las ilustraciones se imprimen en alta resolución con colores vibrantes.',
   },
   {
-    q: '¿Puedo ver el libro antes de comprarlo?',
-    a: '¡Sí! Después de personalizar verás un preview animado con todas las páginas y el nombre de tu hijo/a.',
+    q: '¿Qué puedo personalizar?',
+    a: 'El nombre del protagonista, su apariencia (pelo, piel, ojos) y una dedicatoria personal en la primera página.',
   },
   {
-    q: '¿Qué calidad tiene la impresión?',
-    a: 'Impresión premium en papel grueso de alta calidad, con tapa dura. Las ilustraciones son acuarela digital de nivel editorial.',
+    q: '¿Para qué edad es recomendado?',
+    a: 'Diseñado para niños de 2 a 7 años. Las ilustraciones y la historia se adaptan naturalmente a diferentes edades.',
   },
   {
-    q: '¿Puedo pedir más de un libro?',
-    a: 'Actualmente es un libro por pedido. Si necesitas varios, puedes hacer pedidos separados con distintas personalizaciones.',
+    q: '¿Hacen envíos fuera de Chile?',
+    a: 'Por ahora solo enviamos dentro de Chile. Estamos trabajando para habilitar envíos internacionales pronto.',
   },
 ]
 
@@ -35,11 +35,11 @@ export function BookFAQ() {
     <Accordion type="single" collapsible>
       {faqs.map((faq, i) => (
         <AccordionItem key={i} value={`faq-${i}`}>
-          <AccordionTrigger className="text-left text-base">
+          <AccordionTrigger className="text-left text-base text-ink">
             {faq.q}
           </AccordionTrigger>
           <AccordionContent>
-            <p className="text-text-light leading-relaxed">{faq.a}</p>
+            <p className="text-ink-soft leading-relaxed">{faq.a}</p>
           </AccordionContent>
         </AccordionItem>
       ))}

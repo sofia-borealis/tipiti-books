@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface BookCardProps {
@@ -10,6 +11,7 @@ interface BookCardProps {
   priceCLP: number
   coverUrl: string | null
   isPublished: boolean
+  badge?: string | null
 }
 
 export function BookCard({
@@ -20,6 +22,7 @@ export function BookCard({
   priceCLP,
   coverUrl,
   isPublished,
+  badge,
 }: BookCardProps) {
   const formattedPrice = new Intl.NumberFormat('es-CL', {
     style: 'currency',
@@ -37,14 +40,13 @@ export function BookCard({
             alt={title}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-rose/15">
-            <div className="text-center">
-              <span className="text-5xl">📖</span>
-              <p className="mt-2 text-xs text-text-muted">Portada</p>
+          <div className="w-full h-full bg-gradient-to-br from-rose/20 via-cream-dark to-terracota/10 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-white/60 flex items-center justify-center">
+              <Sparkles className="w-7 h-7 text-terracota/40" />
             </div>
           </div>
         )}
@@ -55,6 +57,12 @@ export function BookCard({
               Próximamente
             </span>
           </div>
+        )}
+
+        {badge && (
+          <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold bg-terracota text-cream">
+            {badge}
+          </span>
         )}
 
         {targetAge && (
@@ -73,6 +81,13 @@ export function BookCard({
           <p className="mt-2 text-sm text-text-light line-clamp-2 leading-relaxed">
             {description.replace(/{name}/g, '...')}
           </p>
+        )}
+
+        {isPublished && (
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-terracota">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Personalizable</span>
+          </div>
         )}
 
         <div className="mt-4 flex items-center justify-between">

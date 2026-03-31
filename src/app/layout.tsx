@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Script from 'next/script'
-import { fraunces, dmSans, caveat } from '@/lib/fonts'
+import { bodoniModa, dmSans, caveat } from '@/lib/fonts'
 import { OrganizationSchema, WebsiteSchema } from '@/components/seo/structured-data'
 import './globals.css'
 
@@ -50,8 +50,8 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    icon: '/favicon-tipiti.svg',
+    apple: '/favicon-tipiti.png',
   },
 }
 
@@ -61,12 +61,15 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es" className={`${fraunces.variable} ${dmSans.variable} ${caveat.variable}`}>
+    <html lang="es" className={`${bodoniModa.variable} ${dmSans.variable} ${caveat.variable}`}>
       <head>
         <OrganizationSchema />
         <WebsiteSchema />
       </head>
       <body>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:bg-forest focus:text-cream focus:px-4 focus:py-2 focus:rounded">
+          Saltar al contenido
+        </a>
         {children}
         {/* Google Analytics — set NEXT_PUBLIC_GA_ID in env */}
         {process.env.NEXT_PUBLIC_GA_ID && (

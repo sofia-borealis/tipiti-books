@@ -35,7 +35,7 @@ export function WaitlistForm() {
 
   if (state === 'success') {
     return (
-      <div className="flex flex-col items-center gap-3 animate-in fade-in duration-500">
+      <div role="status" className="flex flex-col items-center gap-3 animate-in fade-in duration-500">
         <CheckCircle className="w-12 h-12 text-sage" strokeWidth={1.5} />
         <p className="text-lg font-medium text-text font-display">
           ¡Listo! Te avisaremos cuando lancemos.
@@ -49,7 +49,9 @@ export function WaitlistForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col items-center gap-4 w-full max-w-sm mx-auto">
+      <label htmlFor="waitlist-email" className="sr-only">Correo electrónico</label>
       <Input
+        id="waitlist-email"
         type="email"
         placeholder="tu@email.com"
         value={email}
@@ -63,19 +65,20 @@ export function WaitlistForm() {
       />
       <Button
         type="submit"
+        variant="forest"
         disabled={isPending}
         className="w-full"
       >
-        {isPending ? 'Enviando...' : 'Quiero mi libro'}
+        {isPending ? 'Enviando...' : 'Unirme'}
       </Button>
 
       {state === 'duplicate' && (
-        <p className="text-sm text-blue text-center">
+        <p role="status" className="text-sm text-berry text-center">
           Este email ya está registrado. ¡Te avisaremos pronto!
         </p>
       )}
       {state === 'error' && (
-        <p className="text-sm text-terracota-dark text-center">
+        <p role="alert" className="text-sm text-terracota-dark text-center">
           {errorMessage}
         </p>
       )}

@@ -1,52 +1,99 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import Image from 'next/image'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Menu, X } from 'lucide-react'
 
 const navItems = [
-  { href: '/catalogo', label: 'Catálogo' },
-  { href: '/#como-funciona', label: 'Cómo funciona' },
+  { href: '/catalogo', label: 'Nuestros libros' },
   { href: '/#nuestra-historia', label: 'Nuestra historia' },
+  { href: '/#preguntas', label: 'Preguntas' },
 ]
 
 export function StorefrontHeader() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const slideOutRef = useRef<HTMLDivElement>(null)
+  const openButtonRef = useRef<HTMLButtonElement>(null)
+
+  const close = useCallback(() => {
+    setMobileOpen(false)
+    openButtonRef.current?.focus()
+  }, [])
+
+  // Close on Escape
+  useEffect(() => {
+    if (!mobileOpen) return
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') close()
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [mobileOpen, close])
+
+  // Focus trap
+  useEffect(() => {
+    if (!mobileOpen || !slideOutRef.current) return
+    const panel = slideOutRef.current
+    const focusable = panel.querySelectorAll<HTMLElement>(
+      'a[href], button, [tabindex]:not([tabindex="-1"])'
+    )
+    if (focusable.length) focusable[0].focus()
+
+    function handleTab(e: KeyboardEvent) {
+      if (e.key !== 'Tab' || !focusable.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener('keydown', handleTab)
+    return () => document.removeEventListener('keydown', handleTab)
+  }, [mobileOpen])
 
   return (
-    <header className="sticky top-0 z-40 h-[80px] bg-cream/90 backdrop-blur-md border-b border-border-light">
-      <div className="max-w-[1200px] mx-auto h-full flex items-center justify-between px-5 md:px-10">
-        {/* Logo */}
-        <Link href="/" className="text-2xl font-bold text-text font-display">
-          Tipiti Books
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-rule-light">
+      <div className="max-w-[1200px] mx-auto flex flex-col items-center px-5 md:px-10 py-4">
+        {/* Logo centrado */}
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/logo-tipiti.svg"
+            alt="Tipiti Books"
+            width={180}
+            height={40}
+            className="h-8 w-auto"
+            priority
+          />
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav aria-label="Navegación principal" className="hidden md:flex items-center gap-8 mt-2">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="text-base font-medium text-text hover:text-terracota transition-colors"
+              className="text-sm font-medium text-ink-soft hover:text-berry transition-colors"
             >
               {item.label}
             </Link>
           ))}
-          <Link
-            href="/catalogo"
-            className="px-7 py-3 rounded-full bg-terracota text-cream text-base font-medium hover:bg-terracota-dark hover:shadow-[0_4px_16px_rgba(196,125,90,0.3)] hover:-translate-y-0.5 transition-all"
-          >
-            Crea tu libro
-          </Link>
         </nav>
 
         {/* Mobile hamburger */}
         <button
+          ref={openButtonRef}
           onClick={() => setMobileOpen(true)}
-          className="md:hidden p-2 -mr-2"
+          className="md:hidden absolute right-5 top-4 p-2.5 cursor-pointer"
           aria-label="Abrir menú"
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-nav"
         >
-          <Menu className="w-6 h-6 text-text" strokeWidth={1.5} />
+          <Menu className="w-6 h-6 text-ink" strokeWidth={1.5} />
         </button>
       </div>
 
@@ -54,44 +101,42 @@ export function StorefrontHeader() {
       {mobileOpen && (
         <div
           className="fixed inset-0 bg-black/30 z-50 md:hidden"
-          onClick={() => setMobileOpen(false)}
+          onClick={close}
         />
       )}
 
       {/* Mobile slide-out */}
       <div
-        className={`fixed top-0 right-0 z-50 h-screen w-[280px] bg-cream border-l border-border-light p-6 transition-transform duration-300 md:hidden ${
+        ref={slideOutRef}
+        id="mobile-nav"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menú de navegación"
+        className={`fixed top-0 right-0 z-50 h-screen w-[min(280px,85vw)] bg-white border-l border-rule-light p-6 transition-transform duration-300 md:hidden ${
           mobileOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         <div className="flex justify-end mb-8">
           <button
-            onClick={() => setMobileOpen(false)}
-            className="p-2 -mr-2"
+            onClick={close}
+            className="p-2.5 -mr-2 cursor-pointer"
             aria-label="Cerrar menú"
           >
-            <X className="w-6 h-6 text-text" strokeWidth={1.5} />
+            <X className="w-6 h-6 text-ink" strokeWidth={1.5} />
           </button>
         </div>
 
-        <nav className="flex flex-col gap-6">
+        <nav aria-label="Navegación principal" className="flex flex-col gap-6">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className="text-lg font-medium text-text hover:text-terracota transition-colors"
+              onClick={close}
+              className="text-lg font-medium text-ink hover:text-berry transition-colors"
             >
               {item.label}
             </Link>
           ))}
-          <Link
-            href="/catalogo"
-            onClick={() => setMobileOpen(false)}
-            className="mt-4 w-full text-center px-7 py-3.5 rounded-full bg-terracota text-cream text-base font-medium hover:bg-terracota-dark transition-colors"
-          >
-            Crea tu libro
-          </Link>
         </nav>
       </div>
     </header>
